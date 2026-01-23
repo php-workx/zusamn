@@ -1,50 +1,84 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!-- Sync Impact Report
+Version change: TEMPLATE -> 1.0.0
+Modified principles:
+- Placeholder Principle 1 -> I. Code Quality & Type Safety
+- Placeholder Principle 2 -> II. Test-Backed Changes
+- Placeholder Principle 3 -> III. UX Consistency via Tamagui
+- Placeholder Principle 4 -> IV. Performance Budgets
+- Placeholder Principle 5 -> V. Configuration & Platform Hygiene
+Added sections: Platform Constraints; Workflow & Quality Gates
+Removed sections: None
+Templates requiring updates: ✅ .specify/templates/plan-template.md; ✅ .specify/templates/spec-template.md;
+✅ .specify/templates/tasks-template.md; ⚠ .specify/templates/commands/*.md (directory not present)
+Follow-up TODOs: TODO(RATIFICATION_DATE): original adoption date unknown
+-->
+# Zusamn Monorepo Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Code Quality & Type Safety
+All TypeScript must remain strict. New types belong in `packages/domain` and
+must be reused across apps and functions instead of duplicating models. Linting
+and typechecking must pass for every change.
+Rationale: a shared, strict type system prevents drift and avoids runtime defects.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Test-Backed Changes
+Every behavior change must include automated tests that fail without the change
+and pass with it. Unit tests cover domain logic; integration tests cover app or
+function flows that cross module boundaries. Bug fixes must include regression
+coverage.
+Rationale: tests are the primary safeguard for reliability and future refactors.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. UX Consistency via Tamagui
+All UI must use Tamagui components and the shared `@zusamn/ui` provider. Visual
+tokens, spacing, typography, and interaction patterns must remain consistent
+across apps; deviations require an explicit decision and shared token updates.
+Rationale: consistent UI reduces user friction and keeps maintenance predictable.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Performance Budgets
+Each feature must define performance targets (load, interaction, and backend
+latency where applicable) in the plan/spec and verify they are met before
+shipping. Changes must not regress established performance baselines.
+Rationale: performance is a product requirement and must be managed explicitly.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Configuration & Platform Hygiene
+No secrets or real Firebase config may be committed. Use environment variables
+and maintain `.env.example`. Firebase Cloud Functions live in
+`firebase/functions`, and Firestore rules live in `firebase/firestore.rules`.
+Use pnpm + Turborepo for all scripts and do not add Yarn/npm lockfiles.
+Rationale: predictable structure and safe configuration reduce operational risk.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Platform Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Use pnpm + Turborepo for all scripts; do not add Yarn/npm lockfiles.
+- Keep TypeScript strict; prefer types in `packages/domain` and reuse across
+  apps/functions.
+- No secrets or real Firebase config in code or docs; use env vars and
+  `.env.example` only.
+- UI must use Tamagui components and the shared `@zusamn/ui` provider.
+- Cloud Functions live in `firebase/functions`; Firestore rules in
+  `firebase/firestore.rules`.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Workflow & Quality Gates
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- `pnpm lint` and `pnpm typecheck` must pass before merge or release.
+- Tests required by Principle II must run and pass before merge.
+- Performance targets must be declared in the plan/spec and validated before
+  release.
+- UX changes must use shared components and tokens; any new patterns must be
+  reviewed for cross-app consistency.
+- New environment variables must be added to `.env.example` and documented in
+  the relevant README or spec.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes all other local practices and templates.
+- Amendments require a PR that updates this document, includes rationale, and
+  documents migration or roll-out impact.
+- Versioning follows Semantic Versioning: MAJOR for breaking governance changes,
+  MINOR for new principles or material expansions, PATCH for clarifications.
+- Every spec/plan must include a Constitution Check; reviewers must block
+  non-compliant changes unless an explicit, time-boxed exception is documented
+  with owner, rationale, and rollback plan.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2026-01-23

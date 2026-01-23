@@ -95,6 +95,12 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Non-Functional Requirements
+
+- **NFR-001**: UI MUST use Tamagui components and the shared `@zusamn/ui` provider.
+- **NFR-002**: Performance targets (load, interaction, latency) MUST be defined here.
+- **NFR-003**: Changes MUST include an automated test plan covering new behavior.
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
