@@ -1,5 +1,5 @@
 <!-- Sync Impact Report
-Version change: TEMPLATE -> 1.0.0
+Version change: 1.0.0 -> 1.0.1
 Modified principles:
 - Placeholder Principle 1 -> I. Code Quality & Type Safety
 - Placeholder Principle 2 -> II. Test-Backed Changes
@@ -9,8 +9,9 @@ Modified principles:
 Added sections: Platform Constraints; Workflow & Quality Gates
 Removed sections: None
 Templates requiring updates: ✅ .specify/templates/plan-template.md; ✅ .specify/templates/spec-template.md;
-✅ .specify/templates/tasks-template.md; ⚠ .specify/templates/commands/*.md (directory not present)
-Follow-up TODOs: TODO(RATIFICATION_DATE): original adoption date unknown
+✅ .specify/templates/tasks-template.md; ✅ .specify/templates/commands/plan.md;
+✅ .specify/templates/commands/spec.md; ✅ .specify/templates/commands/tasks.md
+Follow-up TODOs: None
 -->
 # Zusamn Monorepo Constitution
 
@@ -81,4 +82,4 @@ Rationale: predictable structure and safe configuration reduce operational risk.
   non-compliant changes unless an explicit, time-boxed exception is documented
   with owner, rationale, and rollback plan.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date unknown | **Last Amended**: 2026-01-23
+**Version**: 1.0.1 | **Ratified**: 2026-01-23 | **Last Amended**: 2026-01-23
