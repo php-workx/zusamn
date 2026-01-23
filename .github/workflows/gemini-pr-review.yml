@@ -1,0 +1,17 @@
+name: Gemini PR Review (placeholder)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  gemini-review:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gemini PR Review (placeholder)
+        run: |
+          echo "TODO: Add Gemini PR review action."
+          echo "Required secrets: GEMINI_API_KEY, GITHUB_TOKEN"

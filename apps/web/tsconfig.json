@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["react", "node"],
+    "jsx": "react-jsx"
+  },
+  "include": ["App.tsx", "../../packages/ui/src/tamagui.config.ts"]
+}

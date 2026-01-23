@@ -1,0 +1,20 @@
+{
+  "name": "@zusamn/web",
+  "version": "0.0.0",
+  "private": true,
+  "main": "App.tsx",
+  "scripts": {
+    "start": "expo start --web",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@zusamn/firebase": "workspace:*",
+    "@zusamn/ui": "workspace:*",
+    "expo": "^51.0.20",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-native": "0.74.3",
+    "react-native-web": "^0.19.13"
+  }
+}

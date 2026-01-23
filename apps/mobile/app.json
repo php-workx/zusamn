@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Zusamn",
+    "slug": "zusamn-mobile",
+    "scheme": "zusamn",
+    "platforms": ["ios", "android"],
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light"
+  }
+}
