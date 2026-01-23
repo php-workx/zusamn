@@ -13,7 +13,7 @@ pnpm lint
 pnpm typecheck
 ```
 
-Prereqs: Node 24+, pnpm 10.27.0+
+Prereqs: Node 22, pnpm 10.27.0+
 
 ### Run apps
 ```bash
