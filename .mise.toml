@@ -1,2 +1,5 @@
 [env]
 CODEX_HOME = "~/workspaces/ws_personal/zusamn/.codex"
+
+[tools]
+node = "22"
