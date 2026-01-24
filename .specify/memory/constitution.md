@@ -1,13 +1,12 @@
 <!-- Sync Impact Report
-Version change: 1.0.0 -> 1.0.1
+Version change: 1.0.1 -> 1.1.0
 Modified principles:
 - Placeholder Principle 1 -> I. Code Quality & Type Safety
 - Placeholder Principle 2 -> II. Test-Backed Changes
 - Placeholder Principle 3 -> III. UX Consistency via Tamagui
-- Placeholder Principle 4 -> IV. Performance Budgets
-- Placeholder Principle 5 -> V. Configuration & Platform Hygiene
-Added sections: Platform Constraints; Workflow & Quality Gates
-Removed sections: None
+- Placeholder Principle 4 -> IV. Configuration & Platform Hygiene
+Added sections: Platform Constraints; Workflow & Quality Gates; Optional Constraints
+Removed sections: None (Performance moved from Core Principles to Optional Constraints)
 Templates requiring updates: ✅ .specify/templates/plan-template.md; ✅ .specify/templates/spec-template.md;
 ✅ .specify/templates/tasks-template.md; ✅ .specify/templates/commands/plan.md;
 ✅ .specify/templates/commands/spec.md; ✅ .specify/templates/commands/tasks.md
@@ -36,13 +35,7 @@ tokens, spacing, typography, and interaction patterns must remain consistent
 across apps; deviations require an explicit decision and shared token updates.
 Rationale: consistent UI reduces user friction and keeps maintenance predictable.
 
-### IV. Performance Budgets
-Each feature must define performance targets (load, interaction, and backend
-latency where applicable) in the plan/spec and verify they are met before
-shipping. Changes must not regress established performance baselines.
-Rationale: performance is a product requirement and must be managed explicitly.
-
-### V. Configuration & Platform Hygiene
+### IV. Configuration & Platform Hygiene
 No secrets or real Firebase config may be committed. Use environment variables
 and maintain `.env.example`. Firebase Cloud Functions live in
 `firebase/functions`, and Firestore rules live in `firebase/firestore.rules`.
@@ -62,14 +55,25 @@ Rationale: predictable structure and safe configuration reduce operational risk.
 
 ## Workflow & Quality Gates
 
-- `pnpm lint` and `pnpm typecheck` must pass before merge or release.
+- Use conventional commits (feat:, fix:, docs:, etc.).
+- No changes to `main` without a PR.
+- Every changeset (work item, task) must live in a feature branch pushed to the
+  remote repository.
+- Every PR must be reviewed by at least one team member.
+- `turbo lint`, `turbo typecheck`, and `turbo test` must pass before pushing to
+  the remote.
 - Tests required by Principle II must run and pass before merge.
-- Performance targets must be declared in the plan/spec and validated before
-  release.
 - UX changes must use shared components and tokens; any new patterns must be
   reviewed for cross-app consistency.
 - New environment variables must be added to `.env.example` and documented in
   the relevant README or spec.
+
+## Optional Constraints
+
+- Performance Budgets: For performance-sensitive features, define targets
+  (load, interaction, and backend latency where applicable) in the plan/spec
+  and verify they are met before shipping. Changes must not regress established
+  performance baselines.
 
 ## Governance
 
@@ -82,4 +86,4 @@ Rationale: predictable structure and safe configuration reduce operational risk.
   non-compliant changes unless an explicit, time-boxed exception is documented
   with owner, rationale, and rollback plan.
 
-**Version**: 1.0.1 | **Ratified**: 2026-01-23 | **Last Amended**: 2026-01-23
+**Version**: 1.1.0 | **Ratified**: 2026-01-23 | **Last Amended**: 2026-01-24

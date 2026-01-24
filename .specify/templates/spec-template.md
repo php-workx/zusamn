@@ -98,7 +98,8 @@
 ### Non-Functional Requirements
 
 - **NFR-001**: UI MUST use Tamagui components and the shared `@zusamn/ui` provider.
-- **NFR-002**: Performance targets (load, interaction, latency) MUST be defined here.
+- **NFR-002**: For performance-sensitive features, performance targets (load,
+  interaction, latency) MUST be defined here.
 - **NFR-003**: Changes MUST include an automated test plan covering new behavior.
 
 ### Key Entities *(include if feature involves data)*

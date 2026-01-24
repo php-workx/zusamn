@@ -10,7 +10,6 @@
 
 ## Enforcement
 
-- Include performance targets in NFRs.
+- Include performance targets in NFRs when the feature is performance-sensitive.
 - Require test coverage for each user story.
 - UX requirements must reference Tamagui + `@zusamn/ui`.
-

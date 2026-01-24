@@ -37,7 +37,8 @@
   - Code Quality & Type Safety: strict TS, shared `packages/domain` types.
   - Test-Backed Changes: unit + integration test plan defined.
   - UX Consistency: Tamagui + `@zusamn/ui` usage confirmed.
-  - Performance Budgets: targets declared and measurement plan defined.
+  - Performance Budgets (if performance-sensitive): targets declared and
+    measurement plan defined.
   - Configuration & Platform Hygiene: no secrets; Firebase paths correct; pnpm + Turbo only.
 -->
 
