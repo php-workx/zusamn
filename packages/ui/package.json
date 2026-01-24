@@ -9,7 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "react": "18.2.0",
+    "react": "19.2.3",
     "react-dom": "18.2.0",
     "tamagui": "^1.114.0"
   }
