@@ -11,6 +11,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "firebase": "^10.14.1"
+    "firebase": "^12.8.0"
   }
 }

@@ -11,4 +11,5 @@ node_modules
 web-build
 build
 dist
+lib
 coverage
