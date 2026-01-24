@@ -5,7 +5,9 @@
   "main": "App.tsx",
   "scripts": {
     "start": "expo start --web",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

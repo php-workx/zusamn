@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { MAX_INVITE_MEMBERS, MAX_ITEMS_PER_LIST, MAX_LISTS_PER_USER } from "./constants";
+import { z } from 'zod';
+import { MAX_INVITE_MEMBERS, MAX_ITEMS_PER_LIST, MAX_LISTS_PER_USER } from './constants';
 
 export const isoDateString = z.string().datetime();
 
@@ -8,7 +8,7 @@ export const userProfileSchema = z.object({
   displayName: z.string().nullable(),
   photoUrl: z.string().url().nullable(),
   createdAt: isoDateString,
-  lastLoginAt: isoDateString
+  lastLoginAt: isoDateString,
 });
 
 export const shoppingListSchema = z.object({
@@ -18,7 +18,7 @@ export const shoppingListSchema = z.object({
   memberUids: z.array(z.string().min(1)),
   itemCount: z.number().int().min(0).max(MAX_ITEMS_PER_LIST),
   createdAt: isoDateString,
-  updatedAt: isoDateString
+  updatedAt: isoDateString,
 });
 
 export const listItemSchema = z.object({
@@ -28,7 +28,7 @@ export const listItemSchema = z.object({
   quantity: z.string().max(64).nullable().optional(),
   checked: z.boolean(),
   createdAt: isoDateString,
-  updatedAt: isoDateString
+  updatedAt: isoDateString,
 });
 
 export const inviteLinkSchema = z.object({
@@ -39,11 +39,7 @@ export const inviteLinkSchema = z.object({
   expiresAt: isoDateString.nullable(),
   maxMembers: z.number().int().min(1).max(MAX_INVITE_MEMBERS),
   acceptedCount: z.number().int().min(0).max(MAX_INVITE_MEMBERS),
-  isActive: z.boolean()
+  isActive: z.boolean(),
 });
 
-export const userListsLimitSchema = z
-  .number()
-  .int()
-  .min(0)
-  .max(MAX_LISTS_PER_USER);
+export const userListsLimitSchema = z.number().int().min(0).max(MAX_LISTS_PER_USER);
