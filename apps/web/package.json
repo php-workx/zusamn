@@ -5,16 +5,18 @@
   "main": "App.tsx",
   "scripts": {
     "start": "expo start --web",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@zusamn/firebase": "workspace:*",
     "@zusamn/ui": "workspace:*",
-    "expo": "^51.0.20",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-native": "0.74.3",
-    "react-native-web": "^0.19.13"
+    "expo": "^54.0.32",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-web": "^0.21.2"
   }
 }

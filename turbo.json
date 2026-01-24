@@ -4,6 +4,13 @@
     "lint": {
       "outputs": []
     },
+    "format": {
+      "outputs": [],
+      "cache": false
+    },
+    "format:check": {
+      "outputs": []
+    },
     "typecheck": {
       "outputs": []
     },

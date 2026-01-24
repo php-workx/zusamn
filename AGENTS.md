@@ -6,7 +6,7 @@
 - No secrets or real Firebase config in code or docs; use env vars and `.env.example` only.
 - UI must use Tamagui components and the shared `@zusamn/ui` provider.
 - Cloud Functions live in `firebase/functions`; Firestore rules in `firebase/firestore.rules`.
-- Run `turbo lint`, `turbo typecheck`, and `turbo test` before finalizing changes.
+- Run `pnpm lint`, `pnpm typecheck`, and `pnpm test` before finalizing changes.
 
 ## Landing the Plane (Session Completion)
 
