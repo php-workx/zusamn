@@ -3,7 +3,7 @@
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command.
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
@@ -31,16 +31,19 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
-<!--
-  Required gates:
-  - Code Quality & Type Safety: strict TS, shared `packages/domain` types.
-  - Test-Backed Changes: unit + integration test plan defined.
-  - UX Consistency: Tamagui + `@zusamn/ui` usage confirmed.
-  - Performance Budgets (if performance-sensitive): targets declared and
-    measurement plan defined.
-  - Configuration & Platform Hygiene: no secrets; Firebase paths correct; pnpm + Turbo only.
--->
+| # | Principle | Gate Question | Pass? |
+|---|-----------|---------------|-------|
+| 1 | Speed Over Features | Does this add friction to the core flow? Is there a simpler approach? | |
+| 2 | Offline-First | Do all affected features work without connectivity? | |
+| 3 | Collaboration Without Annoyance | Is sharing safe and lightweight? Small trusted group only? | |
+| 4 | Simplicity Over Power | Does this directly improve the core loop, or is it scope creep? | |
+| 5 | Calm, Clear Design | Does this follow established patterns? Any novel UI that needs justification? | |
+| 6 | Accessible By Default | Touch targets comfortable? Screen readers work? Keyboard support? | |
+| 7 | Privacy As Restraint | What data does this require? Is all of it necessary? No dark patterns? | |
+| 8 | Focus Protects Quality | Can we ship this well, or are we stretching too thin? | |
+| 9 | Boring Over Clever | Is this solution obvious? Does it need significant explanation? | |
+
+**Tradeoffs requiring justification** (fill in Complexity Tracking if any fail):
 
 ## Project Structure
 
