@@ -8,9 +8,12 @@ node_modules
 .expo
 .expo-shared
 .turbo
+apps/mobile/google-services.json
+apps/mobile/GoogleService-Info.plist
 web-build
 build
 dist
 lib
 coverage
+test-results
 .worktrees

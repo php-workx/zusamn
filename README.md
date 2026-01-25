@@ -11,6 +11,7 @@
 pnpm i
 pnpm lint
 pnpm typecheck
+pre-commit install
 ```
 
 Prereqs: Node 22, pnpm 10.27.0+
