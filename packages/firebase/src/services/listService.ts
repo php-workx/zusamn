@@ -101,23 +101,21 @@ export async function getUserLists(
   );
   const listsSnapshot = await getDocs(listsQuery);
 
-  const results: Array<{ list: List; membership: Membership }> = [];
+  // Parallelize membership lookups to avoid N+1 latency
+  const resolved = await Promise.all(
+    listsSnapshot.docs.map(async (listDoc) => {
+      const listData = listDoc.data();
+      const list: List = {
+        id: listDoc.id,
+        ownerUserId: listData.ownerUserId,
+        memberIds: listData.memberIds,
+        createdAt: listData.createdAt,
+      };
 
-  // For each list, get the user's membership
-  for (const listDoc of listsSnapshot.docs) {
-    const listData = listDoc.data();
-    const list: List = {
-      id: listDoc.id,
-      ownerUserId: listData.ownerUserId,
-      memberIds: listData.memberIds,
-      createdAt: listData.createdAt,
-    };
+      const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
+      const membershipSnapshot = await getDoc(membershipRef);
+      if (!membershipSnapshot.exists()) return null;
 
-    // Get user's membership document
-    const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
-    const membershipSnapshot = await getDoc(membershipRef);
-
-    if (membershipSnapshot.exists()) {
       const membershipData = membershipSnapshot.data();
       const membership: Membership = {
         userId: membershipData.userId,
@@ -126,9 +124,13 @@ export async function getUserLists(
         joinedAt: membershipData.joinedAt,
       };
 
-      results.push({ list, membership });
-    }
-  }
+      return { list, membership };
+    })
+  );
+
+  const results = resolved.filter(
+    (item): item is { list: List; membership: Membership } => item !== null
+  );
 
   // Sort: personal list first (ownerUserId === userId), then alphabetically by alias
   results.sort((a, b) => {

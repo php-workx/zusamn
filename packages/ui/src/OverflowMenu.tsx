@@ -84,10 +84,12 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
             shadowOpacity={0.15}
             shadowRadius={8}
             elevation={4}
+            accessible
+            accessibilityRole="menu"
           >
             {items.map((item, index) => (
               <XStack
-                key={item.label}
+                key={`${index}-${item.label}`}
                 minHeight={44}
                 paddingHorizontal="$4" // 16px
                 alignItems="center"

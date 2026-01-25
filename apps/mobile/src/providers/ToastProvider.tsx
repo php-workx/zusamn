@@ -73,24 +73,15 @@ interface ToastProviderProps {
  */
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toast, setToast] = useState<ToastState | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Store onFinalize in a ref to avoid stale closure issues
   const onFinalizeRef = useRef<(() => void) | undefined>(undefined);
 
-  const clearTimeout_ = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
-
   const finalizeAndClear = useCallback(() => {
-    clearTimeout_();
     // Call onFinalize if defined
     onFinalizeRef.current?.();
     onFinalizeRef.current = undefined;
     setToast(null);
-  }, [clearTimeout_]);
+  }, []);
 
   const showUndoToast = useCallback(
     (options: {
@@ -100,7 +91,6 @@ export function ToastProvider({ children }: ToastProviderProps) {
     }): string => {
       // If existing toast, finalize it first (previous action can no longer be undone)
       if (toast) {
-        clearTimeout_();
         onFinalizeRef.current?.();
       }
 
@@ -117,16 +107,12 @@ export function ToastProvider({ children }: ToastProviderProps) {
         onUndo: options.onUndo,
       });
 
-      // Start timeout - when it fires, finalize and clear
-      timeoutRef.current = setTimeout(() => {
-        onFinalizeRef.current?.();
-        onFinalizeRef.current = undefined;
-        setToast(null);
-      }, TOAST_DURATION);
+      // Timer is managed by Toast component via duration prop
+      // When Toast auto-dismisses, it calls onDismiss which triggers finalizeAndClear
 
       return id;
     },
-    [toast, clearTimeout_]
+    [toast]
   );
 
   const dismissToast = useCallback(() => {
@@ -137,18 +123,16 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
   const handleUndo = useCallback(() => {
     if (toast) {
-      clearTimeout_();
       // Call onUndo, not onFinalize
       toast.onUndo();
       // Clear the onFinalize ref since we're undoing
       onFinalizeRef.current = undefined;
       setToast(null);
     }
-  }, [toast, clearTimeout_]);
+  }, [toast]);
 
   const handleDismiss = useCallback(() => {
-    // This is called by Toast when it auto-dismisses or is dismissed
-    // We handle timer ourselves, so just finalize
+    // Called by Toast when it auto-dismisses after duration
     finalizeAndClear();
   }, [finalizeAndClear]);
 
@@ -165,8 +149,6 @@ export function ToastProvider({ children }: ToastProviderProps) {
         visible={!!toast}
         onDismiss={handleDismiss}
         onUndo={handleUndo}
-        // Pass duration to keep Toast's internal timer in sync,
-        // though we manage our own timer for finalization
         duration={TOAST_DURATION}
       />
     </ToastContext.Provider>

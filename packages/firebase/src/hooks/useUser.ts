@@ -1,27 +1,12 @@
 import { useEffect, useState } from 'react';
-import {
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  serverTimestamp,
-  type Firestore,
-} from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import type { User, Locale } from '@zusamn/domain';
-import { initFirebase } from '../client';
+import { getFirestoreDb } from '../db';
 
 export interface UseUserReturn {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-}
-
-/**
- * Get the Firestore instance
- */
-function getFirestoreDb(): Firestore {
-  const { db } = initFirebase();
-  return db;
 }
 
 /**

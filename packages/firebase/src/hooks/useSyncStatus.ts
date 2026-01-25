@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { onSnapshotsInSync, type Firestore } from 'firebase/firestore';
-import { initFirebase } from '../client';
+import { onSnapshotsInSync } from 'firebase/firestore';
+import { getFirestoreDb } from '../db';
 
 export interface SyncStatus {
   /** Whether there are local writes pending upload to Firestore */
   hasPendingWrites: boolean;
   /** Manually mark that a write operation has started */
   markWritePending: () => void;
-}
-
-/**
- * Get the Firestore instance
- */
-function getFirestoreDb(): Firestore {
-  const { db } = initFirebase();
-  return db;
 }
 
 /**

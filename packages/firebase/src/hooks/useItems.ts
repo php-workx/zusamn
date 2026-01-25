@@ -1,27 +1,12 @@
 import { useEffect, useState } from 'react';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  type Firestore,
-} from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import type { Item } from '@zusamn/domain';
-import { initFirebase } from '../client';
+import { getFirestoreDb } from '../db';
 
 export interface UseItemsReturn {
   items: Item[];
   isLoading: boolean;
   error: Error | null;
-}
-
-/**
- * Get the Firestore instance
- */
-function getFirestoreDb(): Firestore {
-  const { db } = initFirebase();
-  return db;
 }
 
 /**
