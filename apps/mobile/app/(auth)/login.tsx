@@ -146,16 +146,6 @@ export default function LoginScreen() {
               onPress={handleAppleSignIn}
             />
           )}
-
-          {Platform.OS === 'android' && (
-            <PrimaryButton
-              onPress={handleAppleSignIn}
-              disabled={isButtonDisabled}
-              accessibilityLabel="Sign in with Apple"
-            >
-              Continue with Apple
-            </PrimaryButton>
-          )}
         </YStack>
 
         {displayError && (
