@@ -28,6 +28,8 @@
 3.  **Firebase Config**
     - Download `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) from Firebase Console.
     - Place them in `apps/mobile/`.
+    - Example placeholders live in `apps/mobile/google-services.json.example` and `apps/mobile/GoogleService-Info.plist.example`.
+    - Do not commit real Firebase config files.
 
 ## Development
 
