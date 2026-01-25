@@ -32,7 +32,6 @@ jest.mock('@zusamn/firebase', () => ({
 jest.mock('@react-native-community/netinfo', () => ({
   fetch: () => mockNetInfoFetch(),
 }));
-
 jest.mock('@zusamn/ui', () => {
   const React = require('react');
   const { Text, View, Pressable } = require('react-native');
@@ -113,7 +112,6 @@ beforeEach(() => {
   mockDeleteAccount.mockClear();
   mockNetInfoFetch.mockReset();
 });
-
 it('renders display name and action buttons', () => {
   const { getByText } = render(<AccountScreen />);
 
