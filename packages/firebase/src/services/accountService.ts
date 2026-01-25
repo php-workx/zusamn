@@ -8,6 +8,7 @@ import {
   writeBatch,
   type Firestore,
 } from 'firebase/firestore';
+import { deleteUser } from 'firebase/auth';
 import { initFirebase } from '../client';
 import { signOut } from '../auth';
 
@@ -50,7 +51,27 @@ export async function deleteAccountWithDb(
 }
 
 export async function deleteAccount(userId: string): Promise<void> {
-  const { db } = initFirebase();
+  const { db, auth } = initFirebase();
   await deleteAccountWithDb(db, userId);
-  await signOut();
+
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('No authenticated user.');
+  }
+
+  try {
+    await deleteUser(user);
+    await signOut();
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === 'auth/requires-recent-login'
+    ) {
+      throw error;
+    }
+    await signOut();
+    throw error;
+  }
 }
