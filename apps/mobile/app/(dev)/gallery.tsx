@@ -56,7 +56,7 @@ function GalleryContent({ themeLabel }: { themeLabel: string }) {
   const [normalText, setNormalText] = useState('');
   const [focusedText, setFocusedText] = useState('');
   const [errorText, setErrorText] = useState('');
-  const [disabledText] = useState('Disabled input');
+  const disabledText = 'Disabled input';
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);

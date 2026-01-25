@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { useRouter } from 'expo-router';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as Google from 'expo-auth-session/providers/google';
@@ -11,21 +10,26 @@ import { useAuthContext } from '../../src/providers';
 // Complete auth session for web browser
 WebBrowser.maybeCompleteAuthSession();
 
-// OAuth client IDs - should be configured via app.json / eas.json
-const GOOGLE_CLIENT_ID_IOS = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS ?? '';
-const GOOGLE_CLIENT_ID_ANDROID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID ?? '';
-const GOOGLE_CLIENT_ID_WEB = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB ?? '';
+// OAuth client IDs - must be configured via environment variables
+function getRequiredEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
+const GOOGLE_CLIENT_ID_IOS = getRequiredEnv('EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS');
+const GOOGLE_CLIENT_ID_ANDROID = getRequiredEnv('EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID');
+const GOOGLE_CLIENT_ID_WEB = getRequiredEnv('EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB');
 
 /**
- * Generate a random nonce for Apple Sign-In.
+ * Generate a cryptographically secure random nonce for Apple Sign-In.
  * Required for Firebase authentication with Apple.
  */
 async function generateNonce(): Promise<{ nonce: string; hashedNonce: string }> {
-  const nonce = Array.from({ length: 32 }, () =>
-    Math.floor(Math.random() * 256)
-      .toString(16)
-      .padStart(2, '0')
-  ).join('');
+  const randomBytes = await Crypto.getRandomBytesAsync(32);
+  const nonce = Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   const hashedNonce = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
     nonce
@@ -38,9 +42,7 @@ async function generateNonce(): Promise<{ nonce: string; hashedNonce: string }> 
  * Follows FR-AUTH-001 and FR-AUTH-002 requirements.
  */
 export default function LoginScreen() {
-  const router = useRouter();
-  const { user, isLoading, error, signInWithGoogle, signInWithApple, needsDisplayName } =
-    useAuthContext();
+  const { isLoading, error, signInWithGoogle, signInWithApple } = useAuthContext();
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -74,16 +76,7 @@ export default function LoginScreen() {
     handleGoogleResponse();
   }, [googleResponse, signInWithGoogle]);
 
-  // Redirect when authenticated
-  useEffect(() => {
-    if (user && !isLoading) {
-      if (needsDisplayName) {
-        router.replace('/(auth)/display-name');
-      } else {
-        router.replace('/(tabs)');
-      }
-    }
-  }, [user, isLoading, needsDisplayName, router]);
+  // Note: Redirects are handled by AuthGuard in _layout.tsx
 
   const handleGoogleSignIn = async () => {
     setLocalError(null);

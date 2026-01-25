@@ -35,23 +35,23 @@ service cloud.firestore {
       allow delete: if false;
 
       // Memberships (Subcollection)
-      match /memberships/{oduserId} {
+      match /memberships/{userId} {
         allow read: if isMember(listId);
 
         // Create: allowed during invite redemption (user being added to memberIds in same transaction)
         allow create: if isAuthenticated() &&
-          request.auth.uid == oduserId &&
+          request.auth.uid == userId &&
           request.resource.data.alias.size() <= 50 &&
           request.auth.uid in getAfter(/databases/$(database)/documents/lists/$(listId)).data.memberIds;
 
         // Update: only if already a member (e.g., rename alias)
         allow update: if isAuthenticated() &&
-          request.auth.uid == oduserId &&
+          request.auth.uid == userId &&
           isMember(listId) &&
           request.resource.data.alias.size() <= 50;
 
         // Delete: leave list (only if already a member)
-        allow delete: if isAuthenticated() && request.auth.uid == oduserId && isMember(listId);
+        allow delete: if isAuthenticated() && request.auth.uid == userId && isMember(listId);
       }
 
       // Items (Subcollection)

@@ -9,22 +9,12 @@ import { useAuthContext } from '../../src/providers';
  */
 export default function DisplayNameScreen() {
   const router = useRouter();
-  const { user, isLoading, error, updateDisplayName, needsDisplayName } = useAuthContext();
+  const { isLoading, error, updateDisplayName } = useAuthContext();
   const [displayName, setDisplayName] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // If user already has a display name, redirect to main app
-  if (user && !needsDisplayName && !isLoading) {
-    router.replace('/(tabs)');
-    return null;
-  }
-
-  // If no user, redirect to login
-  if (!user && !isLoading) {
-    router.replace('/(auth)/login');
-    return null;
-  }
+  // Note: Redirects are handled by AuthGuard in _layout.tsx
 
   const trimmedName = displayName.trim();
   const isValid = trimmedName.length > 0 && trimmedName.length <= 50;
