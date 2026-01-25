@@ -14,6 +14,7 @@
     "build": "echo 'Mobile build handled by EAS' && exit 0"
   },
   "dependencies": {
+    "@react-native-community/netinfo": "^11.4.1",
     "@zusamn/firebase": "workspace:*",
     "@zusamn/ui": "workspace:*",
     "expo": "^54.0.32",
@@ -23,6 +24,7 @@
     "expo-router": "^6.0.22",
     "expo-web-browser": "^15.0.10",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "react-native-mmkv": "^3.2.0"
   }
 }
