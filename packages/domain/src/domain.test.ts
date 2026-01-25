@@ -8,6 +8,17 @@ import {
   userSchema,
 } from './schemas';
 import { isValidAlias, isValidLocale, isValidText } from './validators';
+import {
+  MAX_LISTS_PER_USER,
+  MAX_ITEMS_PER_LIST,
+  MAX_INVITE_MEMBERS,
+  MAX_TEXT_LENGTH,
+  MAX_ALIAS_LENGTH,
+  SUPPORTED_LOCALES,
+  LIMITS,
+} from './constants';
+import { orderItems } from './utils';
+import type { Item } from './types';
 
 const now = Date.now();
 
@@ -199,6 +210,127 @@ describe('validators', () => {
     it('returns false for invalid locale', () => {
       expect(isValidLocale('fr')).toBe(false);
       expect(isValidLocale('')).toBe(false);
+    });
+  });
+});
+
+describe('constants', () => {
+  it('has correct limit values', () => {
+    expect(MAX_LISTS_PER_USER).toBe(5);
+    expect(MAX_ITEMS_PER_LIST).toBe(200);
+    expect(MAX_INVITE_MEMBERS).toBe(10);
+    expect(MAX_TEXT_LENGTH).toBe(100);
+    expect(MAX_ALIAS_LENGTH).toBe(50);
+  });
+
+  it('has correct supported locales', () => {
+    expect(SUPPORTED_LOCALES).toEqual(['de', 'en']);
+  });
+
+  it('LIMITS object matches individual constants', () => {
+    expect(LIMITS.LISTS_PER_USER_MAX).toBe(MAX_LISTS_PER_USER);
+    expect(LIMITS.ITEMS_PER_LIST_MAX).toBe(MAX_ITEMS_PER_LIST);
+    expect(LIMITS.INVITE_MEMBERS_MAX).toBe(MAX_INVITE_MEMBERS);
+    expect(LIMITS.ITEM_TEXT_MAX).toBe(MAX_TEXT_LENGTH);
+    expect(LIMITS.ALIAS_MAX).toBe(MAX_ALIAS_LENGTH);
+  });
+});
+
+// Helper to create test items
+function createItem(overrides: Partial<Item> = {}): Item {
+  return {
+    id: 'item-1',
+    listId: 'list-1',
+    text: 'Test item',
+    checked: false,
+    deleted: false,
+    createdByUserId: 'user-1',
+    serverCreatedAt: Date.now(),
+    serverUpdatedAt: Date.now(),
+    ...overrides,
+  };
+}
+
+describe('utils', () => {
+  describe('orderItems', () => {
+    it('returns empty array for empty input', () => {
+      expect(orderItems([])).toEqual([]);
+    });
+
+    it('returns unchecked items before checked items', () => {
+      const items: Item[] = [
+        createItem({ id: '1', checked: true, serverCreatedAt: 1000 }),
+        createItem({ id: '2', checked: false, serverCreatedAt: 2000 }),
+        createItem({ id: '3', checked: true, serverCreatedAt: 3000 }),
+        createItem({ id: '4', checked: false, serverCreatedAt: 4000 }),
+      ];
+
+      const result = orderItems(items);
+
+      // Unchecked items should be first (4, 2), then checked (3, 1)
+      expect(result.map((i) => i.id)).toEqual(['4', '2', '3', '1']);
+    });
+
+    it('sorts unchecked items by serverCreatedAt descending (newest first)', () => {
+      const items: Item[] = [
+        createItem({ id: '1', checked: false, serverCreatedAt: 1000 }),
+        createItem({ id: '2', checked: false, serverCreatedAt: 3000 }),
+        createItem({ id: '3', checked: false, serverCreatedAt: 2000 }),
+      ];
+
+      const result = orderItems(items);
+
+      expect(result.map((i) => i.id)).toEqual(['2', '3', '1']);
+    });
+
+    it('sorts checked items by serverCreatedAt descending', () => {
+      const items: Item[] = [
+        createItem({ id: '1', checked: true, serverCreatedAt: 1000 }),
+        createItem({ id: '2', checked: true, serverCreatedAt: 3000 }),
+        createItem({ id: '3', checked: true, serverCreatedAt: 2000 }),
+      ];
+
+      const result = orderItems(items);
+
+      expect(result.map((i) => i.id)).toEqual(['2', '3', '1']);
+    });
+
+    it('handles single unchecked item', () => {
+      const items: Item[] = [createItem({ id: '1', checked: false })];
+
+      const result = orderItems(items);
+
+      expect(result.map((i) => i.id)).toEqual(['1']);
+    });
+
+    it('handles single checked item', () => {
+      const items: Item[] = [createItem({ id: '1', checked: true })];
+
+      const result = orderItems(items);
+
+      expect(result.map((i) => i.id)).toEqual(['1']);
+    });
+
+    it('handles all unchecked items', () => {
+      const items: Item[] = [
+        createItem({ id: '1', checked: false, serverCreatedAt: 1000 }),
+        createItem({ id: '2', checked: false, serverCreatedAt: 2000 }),
+      ];
+
+      const result = orderItems(items);
+
+      expect(result.map((i) => i.id)).toEqual(['2', '1']);
+    });
+
+    it('handles all checked items', () => {
+      const items: Item[] = [
+        createItem({ id: '1', checked: true, serverCreatedAt: 1000 }),
+        createItem({ id: '2', checked: true, serverCreatedAt: 2000 }),
+      ];
+
+      const result = orderItems(items);
+
+      expect(result.map((i) => i.id)).toEqual(['2', '1']);
     });
   });
 });
