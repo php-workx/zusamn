@@ -40,7 +40,15 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
-      - run: pnpm test
+      - name: Run tests with coverage
+        run: pnpm test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/domain/coverage/lcov.info,packages/ui/coverage/lcov.info
+          fail_ci_if_error: false
+          verbose: true
 
   build:
     runs-on: ubuntu-latest
