@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   ConfirmDialog,
@@ -51,10 +52,15 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
     return undefined;
   }, [isConnected, hasPendingWrites]);
 
+  // Memoize checked items to avoid recalculating (js-combine-iterations)
+  const { checkedItems, checkedCount } = useMemo(() => {
+    const checked = items.filter((item) => item.checked);
+    return { checkedItems: checked, checkedCount: checked.length };
+  }, [items]);
+
   // Handle clear checked
   const handleClearChecked = useCallback(async () => {
-    const checkedItems = items.filter((item) => item.checked);
-    if (checkedItems.length === 0) return;
+    if (checkedCount === 0) return;
 
     const itemIds = checkedItems.map((item) => item.id);
     setShowClearDialog(false);
@@ -64,7 +70,7 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
       await bulkSoftDelete(listId, itemIds);
 
       showUndoToast({
-        message: `${checkedItems.length} item${checkedItems.length > 1 ? 's' : ''} cleared`,
+        message: `${checkedCount} item${checkedCount > 1 ? 's' : ''} cleared`,
         onUndo: async () => {
           markWritePending();
           await bulkUndelete(listId, itemIds);
@@ -73,18 +79,19 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
     } catch {
       // Silent error handling
     }
-  }, [listId, items, markWritePending, showUndoToast]);
+  }, [listId, checkedItems, checkedCount, markWritePending, showUndoToast]);
 
-  const checkedCount = items.filter((item) => item.checked).length;
-
-  // Overflow menu items
-  const overflowMenuItems = [
-    {
-      label: `Clear checked${checkedCount > 0 ? ` (${checkedCount})` : ''}`,
-      onPress: () => setShowClearDialog(true),
-      destructive: true,
-    },
-  ];
+  // Memoize overflow menu items (rerender-memo-with-default-value)
+  const overflowMenuItems = useMemo(
+    () => [
+      {
+        label: `Clear checked${checkedCount > 0 ? ` (${checkedCount})` : ''}`,
+        onPress: () => setShowClearDialog(true),
+        destructive: true,
+      },
+    ],
+    [checkedCount]
+  );
 
   // Loading state
   if (isListLoading) {
@@ -102,7 +109,7 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
   const listTitle = membership?.alias ?? 'Shopping';
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.root}>
       <Screen safeArea={false}>
         <TopBar
           title={listTitle}
@@ -146,3 +153,10 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
     </GestureHandlerRootView>
   );
 }
+
+// Hoist static styles (rendering-hoist-jsx)
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

@@ -10,6 +10,22 @@ export interface SwipeableListRowProps {
   onDelete: (item: Item) => void;
 }
 
+// Hoist static JSX outside component (rendering-hoist-jsx)
+const DeleteAction = (
+  <XStack
+    backgroundColor="$danger"
+    justifyContent="center"
+    alignItems="center"
+    paddingHorizontal="$4"
+  >
+    <Text color="white" fontWeight="$2">
+      Delete
+    </Text>
+  </XStack>
+);
+
+const renderRightActions = () => DeleteAction;
+
 /**
  * ListRow with swipe-left delete gesture and long-press delete.
  * Per spec: swipe-left OR long-press both trigger delete.
@@ -33,21 +49,6 @@ export function SwipeableListRow({
   const handlePress = useCallback(() => {
     onToggleChecked(item);
   }, [item, onToggleChecked]);
-
-  const renderRightActions = useCallback(() => {
-    return (
-      <XStack
-        backgroundColor="$danger"
-        justifyContent="center"
-        alignItems="center"
-        paddingHorizontal="$4"
-      >
-        <Text color="white" fontWeight="$2">
-          Delete
-        </Text>
-      </XStack>
-    );
-  }, []);
 
   return (
     <Swipeable

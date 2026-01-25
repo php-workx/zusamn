@@ -49,6 +49,12 @@ export function AddItemInput({ listId, userId, onWritePending }: AddItemInputPro
     }
   }, [inputValue, listId, userId, onWritePending]);
 
+  // Stable callback (rerender-functional-setstate)
+  const handleChangeText = useCallback((text: string) => {
+    setInputValue(text);
+    setError((prev) => (prev ? null : prev));
+  }, []);
+
   return (
     <YStack>
       {error && (
@@ -67,10 +73,7 @@ export function AddItemInput({ listId, userId, onWritePending }: AddItemInputPro
       )}
       <FixedBottomInput
         value={inputValue}
-        onChangeText={(text) => {
-          setInputValue(text);
-          if (error) setError(null);
-        }}
+        onChangeText={handleChangeText}
         onSubmit={handleSubmit}
         placeholder="Add item..."
         maxLength={MAX_TEXT_LENGTH}
