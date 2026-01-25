@@ -63,6 +63,7 @@ apps/
     │   ├── features/    # Feature-based folders
     │   └── navigation/
     └── assets/
+└── web/                 # Invite landing app (repurposed web app)
 
 packages/
 ├── domain/              # Shared types & validators

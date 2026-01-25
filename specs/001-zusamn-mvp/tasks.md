@@ -26,7 +26,7 @@ packages/
   domain/                 # Shared types & validators
   ui/                     # Tamagui components
   firebase/               # Firebase config & hooks
-apps/web-invite/          # Minimal invite landing page
+apps/web/                 # Minimal invite landing page (repurposed web app)
 ```
 
 ---
@@ -35,7 +35,7 @@ apps/web-invite/          # Minimal invite landing page
 
 **Purpose**: Monorepo initialization, EAS configuration, Firebase project setup
 
-- [ ] T001 Create TurboRepo monorepo with apps/mobile, apps/web-invite, packages/domain, packages/ui, packages/firebase
+- [ ] T001 Create TurboRepo monorepo with apps/mobile, apps/web, packages/domain, packages/ui, packages/firebase
 - [ ] T002 Initialize Expo project in apps/mobile with TypeScript and scheme "zusamn"
 - [ ] T003 [P] Configure EAS Build for iOS and Android dev clients in apps/mobile/eas.json
 - [ ] T004 [P] Configure Associated Domains (iOS) and App Links (Android) in apps/mobile/app.json
@@ -195,9 +195,9 @@ apps/web-invite/          # Minimal invite landing page
 
 ### Web Invite Landing Page
 
-- [ ] T078 [P] [US2] Create minimal HTML structure in apps/web-invite/index.html
-- [ ] T079 [P] [US2] Add Firebase Auth JS SDK (Google, Apple) in apps/web-invite/src/auth.js
-- [ ] T080 [US2] Display share name and sharer info (no email) in apps/web-invite/src/invite.js
+- [ ] T078 [P] [US2] Create minimal HTML structure in apps/web/index.html
+- [ ] T079 [P] [US2] Add Firebase Auth JS SDK (Google, Apple) in apps/web/src/auth.js
+- [ ] T080 [US2] Display share name and sharer info (no email) in apps/web/src/invite.js
 - [ ] T081 [US2] Add auth provider warning near buttons in apps/web-invite/src/invite.js
 - [ ] T082 [US2] Implement existing session check ("Continue as [Name]?") in apps/web-invite/src/invite.js
 - [ ] T083 [US2] Implement invite validation (expired, used, full, already member) in apps/web-invite/src/invite.js
