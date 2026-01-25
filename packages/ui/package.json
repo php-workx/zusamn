@@ -9,11 +9,16 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --config ../../vitest.config.ts --coverage --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml"
+    "test": "vitest run --config vitest.config.ts --coverage --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml"
   },
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tamagui": "^1.114.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.0.0",
+    "jsdom": "^26.0.0"
   }
 }
