@@ -73,6 +73,8 @@ service cloud.firestore {
     }
 
     // Invites (Global)
+    // Note: Read is permissive by design - invites are accessed via shared links
+    // The invite token/ID itself is the access control mechanism
     match /invites/{inviteId} {
       allow read: if isAuthenticated();
 
@@ -81,10 +83,18 @@ service cloud.firestore {
         request.resource.data.createdByUserId == request.auth.uid &&
         request.auth.uid in get(/databases/$(database)/documents/lists/$(request.resource.data.listId)).data.memberIds;
 
+      // Update: Only allow setting usedBy/usedAt when redeeming an invite
+      // Prevent modification of other fields (listId, createdByUserId, etc.)
       allow update: if isAuthenticated() &&
         resource.data.usedBy == null &&
         resource.data.expiresAt > request.time &&
-        request.resource.data.usedBy == request.auth.uid;
+        request.resource.data.usedBy == request.auth.uid &&
+        // Ensure immutable fields are not changed
+        request.resource.data.listId == resource.data.listId &&
+        request.resource.data.createdByUserId == resource.data.createdByUserId &&
+        request.resource.data.inviteAlias == resource.data.inviteAlias &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.expiresAt == resource.data.expiresAt;
     }
   }
 }

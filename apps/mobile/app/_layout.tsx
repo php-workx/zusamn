@@ -24,8 +24,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const inAuthGroup = firstSegment === '(auth)';
 
     if (!user) {
-      // User is not authenticated - redirect to login if not already there
-      if (!inAuthGroup) {
+      // User is not authenticated - redirect to login
+      // Also redirect from display-name since it requires an authenticated user
+      if (!inAuthGroup || secondSegment === 'display-name') {
         router.replace('/(auth)/login');
       }
     } else if (needsDisplayName) {

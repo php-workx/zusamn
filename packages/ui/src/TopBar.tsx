@@ -78,7 +78,23 @@ export function TopBar({
           minHeight={44}
           justifyContent="center"
         >
-          {titleContent.props.children}
+          <Text
+            fontSize="$3"
+            fontWeight="$2"
+            color="$text"
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+          {subtitle && (
+            <Text
+              fontSize="$1"
+              fontWeight="$1"
+              color="$textMuted"
+            >
+              {subtitle}
+            </Text>
+          )}
         </YStack>
       ) : (
         titleContent

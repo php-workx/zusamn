@@ -99,7 +99,8 @@ export async function signOut(): Promise<void> {
 
 /**
  * Check if a user needs to set up their display name.
- * Returns true if displayName is null or empty.
+ * Returns false for null user (no setup needed if not authenticated).
+ * Returns true if user exists but displayName is null, empty, or whitespace-only.
  */
 export function needsDisplayNameSetup(user: AuthUser | null): boolean {
   if (!user) return false;
