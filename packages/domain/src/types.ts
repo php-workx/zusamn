@@ -1,41 +1,47 @@
-export type EntityId = string;
-export type ISODateString = string;
+export type Locale = 'de' | 'en';
 
-export interface UserProfile {
-  uid: string;
-  displayName: string | null;
-  photoUrl: string | null;
-  createdAt: ISODateString;
-  lastLoginAt: ISODateString;
+export interface User {
+  id: string;
+  displayName: string;
+  email: string;
+  avatarUrl?: string | null;
+  locale: Locale;
+  createdAt: number; // Timestamp
+  deletedAt?: number | null;
 }
 
-export interface ShoppingList {
-  id: EntityId;
-  name: string;
-  ownerUid: string;
-  memberUids: string[];
-  itemCount: number;
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
+export interface List {
+  id: string;
+  ownerUserId: string;
+  memberIds: string[];
+  createdAt: number;
 }
 
-export interface ListItem {
-  id: EntityId;
-  listId: EntityId;
-  title: string;
-  quantity?: string | null;
+export interface Membership {
+  userId: string;
+  listId: string;
+  alias: string;
+  joinedAt: number;
+}
+
+export interface Item {
+  id: string;
+  listId: string;
+  text: string;
   checked: boolean;
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
+  deleted: boolean;
+  createdByUserId: string;
+  serverCreatedAt: number;
+  serverUpdatedAt: number;
 }
 
-export interface InviteLink {
-  token: string;
-  listId: EntityId;
-  createdByUid: string;
-  createdAt: ISODateString;
-  expiresAt: ISODateString | null;
-  maxMembers: number;
-  acceptedCount: number;
-  isActive: boolean;
+export interface Invite {
+  id: string;
+  listId: string;
+  inviteAlias: string;
+  createdByUserId: string;
+  createdAt: number;
+  expiresAt: number;
+  usedBy?: string | null;
+  usedAt?: number | null;
 }
