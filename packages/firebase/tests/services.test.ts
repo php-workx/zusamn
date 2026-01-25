@@ -95,6 +95,7 @@ describe('listService', () => {
       const userId = 'test-user';
       const listId = 'test-list';
 
+      // All operations in single callback to ensure data persistence
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
 
@@ -112,11 +113,8 @@ describe('listService', () => {
           alias: 'Shopping',
           joinedAt: Date.now(),
         });
-      });
 
-      // Verify the list was created
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
+        // Verify the list was created
         const listDoc = await getDoc(doc(db, 'lists', listId));
         expect(listDoc.exists()).toBe(true);
         expect(listDoc.data()?.ownerUserId).toBe(userId);
@@ -132,18 +130,15 @@ describe('itemService (via Firestore)', () => {
   const listId = 'test-list';
   const userId = 'test-user';
 
-  beforeEach(async () => {
-    // Create a list for testing items (with itemCount for service compatibility)
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      const db = context.firestore();
-      await setDoc(doc(db, 'lists', listId), {
-        ownerUserId: userId,
-        memberIds: [userId],
-        createdAt: Date.now(),
-        itemCount: 0,
-      });
+  // Helper to create list within a callback
+  async function createTestList(db: ReturnType<ReturnType<typeof testEnv.unauthenticatedContext>['firestore']>) {
+    await setDoc(doc(db, 'lists', listId), {
+      ownerUserId: userId,
+      memberIds: [userId],
+      createdAt: Date.now(),
+      itemCount: 0,
     });
-  });
+  }
 
   describe('item CRUD operations', () => {
     it('can create and read an item', async () => {
@@ -151,6 +146,7 @@ describe('itemService (via Firestore)', () => {
 
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
+        await createTestList(db);
 
         // Create item
         await setDoc(doc(db, 'lists', listId, 'items', itemId), {
@@ -176,6 +172,7 @@ describe('itemService (via Firestore)', () => {
 
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
+        await createTestList(db);
 
         // Create item
         await setDoc(doc(db, 'lists', listId, 'items', itemId), {
@@ -206,6 +203,7 @@ describe('itemService (via Firestore)', () => {
 
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
+        await createTestList(db);
         const itemRef = doc(db, 'lists', listId, 'items', itemId);
 
         // Create item
@@ -241,6 +239,7 @@ describe('itemService (via Firestore)', () => {
     it('can count non-deleted items', async () => {
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
+        await createTestList(db);
 
         // Create 3 items, 1 deleted
         await setDoc(doc(db, 'lists', listId, 'items', 'item1'), {
@@ -286,6 +285,7 @@ describe('itemService (via Firestore)', () => {
     it('can bulk delete and restore items', async () => {
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
+        await createTestList(db);
         const { writeBatch } = await import('firebase/firestore');
 
         // Create items
