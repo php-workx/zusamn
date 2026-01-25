@@ -1,45 +1,59 @@
 import { z } from 'zod';
-import { MAX_INVITE_MEMBERS, MAX_ITEMS_PER_LIST, MAX_LISTS_PER_USER } from './constants';
+import {
+  MAX_ALIAS_LENGTH,
+  MAX_ITEMS_PER_LIST,
+  MAX_LISTS_PER_USER,
+  MAX_TEXT_LENGTH,
+  SUPPORTED_LOCALES,
+} from './constants';
 
-export const isoDateString = z.string().datetime();
+export const localeSchema = z.enum(SUPPORTED_LOCALES);
 
-export const userProfileSchema = z.object({
-  uid: z.string().min(1),
-  displayName: z.string().nullable(),
-  photoUrl: z.string().url().nullable(),
-  createdAt: isoDateString,
-  lastLoginAt: isoDateString,
-});
-
-export const shoppingListSchema = z.object({
+export const userSchema = z.object({
   id: z.string().min(1),
-  name: z.string().min(1).max(120),
-  ownerUid: z.string().min(1),
-  memberUids: z.array(z.string().min(1)),
-  itemCount: z.number().int().min(0).max(MAX_ITEMS_PER_LIST),
-  createdAt: isoDateString,
-  updatedAt: isoDateString,
+  displayName: z.string().min(1),
+  email: z.string().email(),
+  avatarUrl: z.string().url().nullable().optional(),
+  locale: localeSchema,
+  createdAt: z.number().int().positive(),
+  deletedAt: z.number().int().positive().nullable().optional(),
 });
 
-export const listItemSchema = z.object({
+export const listSchema = z.object({
+  id: z.string().min(1),
+  ownerUserId: z.string().min(1),
+  memberIds: z.array(z.string().min(1)),
+  createdAt: z.number().int().positive(),
+});
+
+export const membershipSchema = z.object({
+  userId: z.string().min(1),
+  listId: z.string().min(1),
+  alias: z.string().min(1).max(MAX_ALIAS_LENGTH),
+  joinedAt: z.number().int().positive(),
+});
+
+export const itemSchema = z.object({
   id: z.string().min(1),
   listId: z.string().min(1),
-  title: z.string().min(1).max(200),
-  quantity: z.string().max(64).nullable().optional(),
+  text: z.string().min(1).max(MAX_TEXT_LENGTH),
   checked: z.boolean(),
-  createdAt: isoDateString,
-  updatedAt: isoDateString,
+  deleted: z.boolean(),
+  createdByUserId: z.string().min(1),
+  serverCreatedAt: z.number().int().positive(),
+  serverUpdatedAt: z.number().int().positive(),
 });
 
-export const inviteLinkSchema = z.object({
-  token: z.string().min(10),
+export const inviteSchema = z.object({
+  id: z.string().min(1),
   listId: z.string().min(1),
-  createdByUid: z.string().min(1),
-  createdAt: isoDateString,
-  expiresAt: isoDateString.nullable(),
-  maxMembers: z.number().int().min(1).max(MAX_INVITE_MEMBERS),
-  acceptedCount: z.number().int().min(0).max(MAX_INVITE_MEMBERS),
-  isActive: z.boolean(),
+  inviteAlias: z.string().min(1).max(MAX_ALIAS_LENGTH),
+  createdByUserId: z.string().min(1),
+  createdAt: z.number().int().positive(),
+  expiresAt: z.number().int().positive(),
+  usedBy: z.string().min(1).nullable().optional(),
+  usedAt: z.number().int().positive().nullable().optional(),
 });
 
 export const userListsLimitSchema = z.number().int().min(0).max(MAX_LISTS_PER_USER);
+export const listItemsLimitSchema = z.number().int().min(0).max(MAX_ITEMS_PER_LIST);

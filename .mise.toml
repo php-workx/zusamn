@@ -1,4 +1,7 @@
 [env]
 
 [tools]
+# Java 17 for EAS Build compatibility (EAS images use Java 17)
+# Note: firebase-tools@15 will require Java 21; may need to upgrade EAS or use conditional versioning
+java = "17"
 node = "22"

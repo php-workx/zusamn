@@ -1,30 +1,111 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() {
+
+    // --- Helpers ---
+
+    function isAuthenticated() {
       return request.auth != null;
     }
 
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    function isMember(listId) {
+      return isAuthenticated() &&
+        request.auth.uid in get(/databases/$(database)/documents/lists/$(listId)).data.memberIds;
     }
 
-    match /lists/{listId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.memberUids;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.ownerUid;
+    // --- Rules ---
 
+    // Users: Owner access only
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Lists: Members can read/update; Creator can create
+    match /lists/{listId} {
+      allow read: if isMember(listId);
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.memberIds.size() == 1 &&
+        request.resource.data.memberIds[0] == request.auth.uid;
+
+      // Update: Members can update, OR non-member can add themselves (invite redemption)
+      allow update: if request.resource.data.memberIds.size() <= 3 && (
+        // Existing members can update
+        isMember(listId) ||
+        // Non-member can add only themselves (for invite redemption transaction)
+        (isAuthenticated() &&
+          request.resource.data.memberIds.hasAll(resource.data.memberIds) &&
+          request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1 &&
+          request.auth.uid in request.resource.data.memberIds &&
+          !(request.auth.uid in resource.data.memberIds))
+      );
+
+      // No delete allowed (soft delete or leave only)
+      allow delete: if false;
+
+      // Memberships (Subcollection)
+      match /memberships/{userId} {
+        allow read: if isMember(listId);
+
+        // Create: allowed during invite redemption (user being added to memberIds in same transaction)
+        allow create: if isAuthenticated() &&
+          request.auth.uid == userId &&
+          request.resource.data.alias.size() <= 50 &&
+          request.auth.uid in getAfter(/databases/$(database)/documents/lists/$(listId)).data.memberIds;
+
+        // Update: only if already a member (e.g., rename alias)
+        allow update: if isAuthenticated() &&
+          request.auth.uid == userId &&
+          isMember(listId) &&
+          request.resource.data.alias.size() <= 50;
+
+        // Delete: leave list (only if already a member)
+        allow delete: if isAuthenticated() && request.auth.uid == userId && isMember(listId);
+      }
+
+      // Items (Subcollection)
       match /items/{itemId} {
-        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/lists/$(listId)).data.memberUids;
-        allow create, update, delete: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/lists/$(listId)).data.memberUids;
+        allow read: if isMember(listId);
+
+        allow create: if isMember(listId) &&
+          request.resource.data.text.size() <= 100;
+
+        allow update: if isMember(listId) &&
+          // Enforce text length on all updates
+          request.resource.data.text.size() <= 100 && (
+          // Allow normal updates if not deleted
+          (resource.data.deleted == false) ||
+          // Allow UNDELETE (deleted: true -> deleted: false)
+          (resource.data.deleted == true && request.resource.data.deleted == false)
+        );
+
+        allow delete: if false;
       }
     }
 
-    match /invites/{token} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+    // Invites (Global)
+    // Note: Read is permissive by design - invites are accessed via shared links
+    // The invite token/ID itself is the access control mechanism
+    match /invites/{inviteId} {
+      allow read: if isAuthenticated();
+
+      // CRITICAL: Ensure creator is actually a member of the target list
+      allow create: if isAuthenticated() &&
+        request.resource.data.createdByUserId == request.auth.uid &&
+        request.auth.uid in get(/databases/$(database)/documents/lists/$(request.resource.data.listId)).data.memberIds;
+
+      // Update: Only allow setting usedBy/usedAt when redeeming an invite
+      // Prevent modification of other fields (listId, createdByUserId, etc.)
+      allow update: if isAuthenticated() &&
+        resource.data.usedBy == null &&
+        resource.data.expiresAt > request.time &&
+        request.resource.data.usedBy == request.auth.uid &&
+        // Ensure immutable fields are not changed
+        request.resource.data.listId == resource.data.listId &&
+        request.resource.data.createdByUserId == resource.data.createdByUserId &&
+        request.resource.data.inviteAlias == resource.data.inviteAlias &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.expiresAt == resource.data.expiresAt;
     }
   }
 }

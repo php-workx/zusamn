@@ -17,6 +17,11 @@
     "@zusamn/firebase": "workspace:*",
     "@zusamn/ui": "workspace:*",
     "expo": "^54.0.32",
+    "expo-apple-authentication": "^8.0.8",
+    "expo-auth-session": "^7.0.10",
+    "expo-crypto": "^15.0.8",
+    "expo-router": "^6.0.22",
+    "expo-web-browser": "^15.0.10",
     "react": "19.1.0",
     "react-native": "0.81.5"
   }

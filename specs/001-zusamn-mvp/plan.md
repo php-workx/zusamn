@@ -57,13 +57,13 @@ specs/001-zusamn-mvp/
 
 ```text
 apps/
-└── mobile/              # Expo Router app
-    ├── app/
-    ├── src/
-    │   ├── features/    # Feature-based folders
-    │   └── navigation/
-    └── assets/
-└── web/                 # Invite landing app (repurposed web app)
+├── mobile/              # Expo Router app
+│   ├── app/
+│   ├── src/
+│   │   ├── features/    # Feature-based folders
+│   │   └── navigation/
+│   └── assets/
+└── web/                 # Invite landing app
 
 packages/
 ├── domain/              # Shared types & validators

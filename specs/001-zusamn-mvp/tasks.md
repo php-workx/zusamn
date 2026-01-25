@@ -26,7 +26,7 @@ packages/
   domain/                 # Shared types & validators
   ui/                     # Tamagui components
   firebase/               # Firebase config & hooks
-apps/web/                 # Minimal invite landing page (repurposed web app)
+apps/web/                 # Minimal invite landing page
 ```
 
 ---
@@ -198,12 +198,12 @@ apps/web/                 # Minimal invite landing page (repurposed web app)
 - [ ] T078 [P] [US2] Create minimal HTML structure in apps/web/index.html
 - [ ] T079 [P] [US2] Add Firebase Auth JS SDK (Google, Apple) in apps/web/src/auth.js
 - [ ] T080 [US2] Display share name and sharer info (no email) in apps/web/src/invite.js
-- [ ] T081 [US2] Add auth provider warning near buttons in apps/web-invite/src/invite.js
-- [ ] T082 [US2] Implement existing session check ("Continue as [Name]?") in apps/web-invite/src/invite.js
-- [ ] T083 [US2] Implement invite validation (expired, used, full, already member) in apps/web-invite/src/invite.js
-- [ ] T084 [US2] Implement invite redemption call in apps/web-invite/src/invite.js
-- [ ] T085 [US2] Show "Joined with [Provider]" after success in apps/web-invite/src/invite.js
-- [ ] T086 [US2] Add "Open Zusamn" and "Install Zusamn" buttons in apps/web-invite/src/invite.js
+- [ ] T081 [US2] Add auth provider warning near buttons in apps/web/src/invite.js
+- [ ] T082 [US2] Implement existing session check ("Continue as [Name]?") in apps/web/src/invite.js
+- [ ] T083 [US2] Implement invite validation (expired, used, full, already member) in apps/web/src/invite.js
+- [ ] T084 [US2] Implement invite redemption call in apps/web/src/invite.js
+- [ ] T085 [US2] Show "Joined with [Provider]" after success in apps/web/src/invite.js
+- [ ] T086 [US2] Add "Open Zusamn" and "Install Zusamn" buttons in apps/web/src/invite.js
 - [ ] T087 [US2] Deploy web invite page to Firebase Hosting
 
 ### Deep Link Handling (App)
