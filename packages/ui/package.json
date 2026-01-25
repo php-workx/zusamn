@@ -9,7 +9,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --config ../../vitest.config.ts"
+    "test": "vitest run --config ../../vitest.config.ts --coverage --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml"
   },
   "dependencies": {
     "react": "19.1.0",
