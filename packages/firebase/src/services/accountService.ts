@@ -26,7 +26,7 @@ export async function deleteAccountWithDb(
   const listSnapshot = await getDocs(listQuery);
   const batch = writeBatch(db);
 
-  listSnapshot.docs.forEach((docSnap) => {
+  for (const docSnap of listSnapshot.docs) {
     const data = docSnap.data() as { ownerUserId?: string; memberIds?: string[] };
     const memberIds = Array.isArray(data.memberIds) ? data.memberIds : [];
     const isPersonal =
@@ -44,7 +44,7 @@ export async function deleteAccountWithDb(
 
     batch.update(docSnap.ref, update);
     batch.delete(doc(db, 'lists', docSnap.id, 'memberships', userId));
-  });
+  }
 
   batch.delete(doc(db, 'users', userId));
 
