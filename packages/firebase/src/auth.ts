@@ -118,6 +118,7 @@ export function getCurrentUser(): AuthUser | null {
 /**
  * Update the current user's display name.
  * Used when social login does not provide a first name.
+ * Trims the input and rejects empty/whitespace-only names.
  */
 export async function updateDisplayName(displayName: string): Promise<AuthUser> {
   const auth = getFirebaseAuth();
@@ -125,6 +126,12 @@ export async function updateDisplayName(displayName: string): Promise<AuthUser> 
   if (!currentUser) {
     throw new Error('No authenticated user');
   }
-  await updateProfile(currentUser, { displayName });
+
+  const trimmedName = displayName.trim();
+  if (trimmedName.length === 0) {
+    throw new Error('Display name cannot be empty');
+  }
+
+  await updateProfile(currentUser, { displayName: trimmedName });
   return toAuthUser(currentUser);
 }

@@ -28,8 +28,17 @@ service cloud.firestore {
         request.resource.data.memberIds.size() == 1 &&
         request.resource.data.memberIds[0] == request.auth.uid;
 
-      allow update: if isMember(listId) &&
-        request.resource.data.memberIds.size() <= 3;
+      // Update: Members can update, OR non-member can add themselves (invite redemption)
+      allow update: if request.resource.data.memberIds.size() <= 3 && (
+        // Existing members can update
+        isMember(listId) ||
+        // Non-member can add only themselves (for invite redemption transaction)
+        (isAuthenticated() &&
+          request.resource.data.memberIds.hasAll(resource.data.memberIds) &&
+          request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1 &&
+          request.auth.uid in request.resource.data.memberIds &&
+          !(request.auth.uid in resource.data.memberIds))
+      );
 
       // No delete allowed (soft delete or leave only)
       allow delete: if false;
@@ -61,7 +70,9 @@ service cloud.firestore {
         allow create: if isMember(listId) &&
           request.resource.data.text.size() <= 100;
 
-        allow update: if isMember(listId) && (
+        allow update: if isMember(listId) &&
+          // Enforce text length on all updates
+          request.resource.data.text.size() <= 100 && (
           // Allow normal updates if not deleted
           (resource.data.deleted == false) ||
           // Allow UNDELETE (deleted: true -> deleted: false)

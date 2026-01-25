@@ -8,6 +8,8 @@ export interface TopBarProps {
   subtitle?: string;
   /** Whether the title is tappable */
   onTitlePress?: () => void;
+  /** Accessibility hint for tappable title (default: "Double tap to open list switcher") */
+  titleAccessibilityHint?: string;
   /** Right-side action elements */
   rightActions?: ReactNode;
   /** Left-side action elements */
@@ -22,6 +24,7 @@ export function TopBar({
   title,
   subtitle,
   onTitlePress,
+  titleAccessibilityHint = 'Double tap to open list switcher',
   rightActions,
   leftActions,
 }: TopBarProps) {
@@ -74,7 +77,7 @@ export function TopBar({
           accessible
           accessibilityRole="button"
           accessibilityLabel={`${title}${subtitle ? `, ${subtitle}` : ''}`}
-          accessibilityHint="Double tap to open list switcher"
+          accessibilityHint={titleAccessibilityHint}
           minHeight={44}
           justifyContent="center"
         >
@@ -91,6 +94,8 @@ export function TopBar({
               fontSize="$1"
               fontWeight="$1"
               color="$textMuted"
+              accessible
+              accessibilityLiveRegion="polite"
             >
               {subtitle}
             </Text>
