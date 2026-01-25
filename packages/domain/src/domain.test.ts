@@ -7,7 +7,7 @@ import {
   membershipSchema,
   userSchema,
 } from './schemas';
-import { isValidAlias, isValidLocale, isValidText } from './validators';
+import { isValidAlias, isValidLocale, isValidText, validateItemText } from './validators';
 import {
   MAX_LISTS_PER_USER,
   MAX_ITEMS_PER_LIST,
@@ -178,8 +178,50 @@ describe('validators', () => {
       expect(isValidText('')).toBe(false);
     });
 
+    it('returns false for whitespace-only text', () => {
+      expect(isValidText('   ')).toBe(false);
+      expect(isValidText('\t\n')).toBe(false);
+    });
+
     it('returns false for text over 100 characters', () => {
       expect(isValidText('a'.repeat(101))).toBe(false);
+    });
+
+    it('returns false for non-string input', () => {
+      expect(isValidText(null as unknown as string)).toBe(false);
+      expect(isValidText(undefined as unknown as string)).toBe(false);
+      expect(isValidText(123 as unknown as string)).toBe(false);
+    });
+  });
+
+  describe('validateItemText', () => {
+    it('returns valid for valid text', () => {
+      expect(validateItemText('Milk')).toEqual({ valid: true });
+      expect(validateItemText('a'.repeat(100))).toEqual({ valid: true });
+    });
+
+    it('returns error for non-string input', () => {
+      const result = validateItemText(null as unknown as string);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text must be a string');
+    });
+
+    it('returns error for empty text', () => {
+      const result = validateItemText('');
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text cannot be empty');
+    });
+
+    it('returns error for whitespace-only text', () => {
+      const result = validateItemText('   ');
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text cannot be empty');
+    });
+
+    it('returns error for text over 100 characters', () => {
+      const result = validateItemText('a'.repeat(101));
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text exceeds maximum length of 100 characters');
     });
   });
 
