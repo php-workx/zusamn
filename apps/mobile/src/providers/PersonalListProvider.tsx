@@ -35,7 +35,7 @@ interface PersonalListProviderProps {
  */
 export function PersonalListProvider({ children }: PersonalListProviderProps) {
   const { user } = useAuthContext();
-  const { getLastUsedListId, setLastUsedListId } = useLastUsedList();
+  const { getLastUsedListId, setLastUsedListId, clearLastUsedListId } = useLastUsedList();
 
   const [listId, setListId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -57,13 +57,27 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
       }
 
       try {
-        // Check for last used list first
+        // Check for last used list first (fast path)
         const lastListId = getLastUsedListId();
         if (lastListId) {
           if (!cancelled) {
             setListId(lastListId);
             setIsInitializing(false);
           }
+          // Background validation - verify cached list still exists
+          getPersonalList(user.uid).then((result) => {
+            if (cancelled) return;
+            // If cached list no longer exists or differs, update to current list
+            if (!result || result.list.id !== lastListId) {
+              if (result) {
+                setLastUsedListId(result.list.id);
+                setListId(result.list.id);
+              } else {
+                clearLastUsedListId();
+                setListId(null);
+              }
+            }
+          });
           return;
         }
 
@@ -102,7 +116,7 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid, firestoreUser, isUserLoading, getLastUsedListId, setLastUsedListId]);
+  }, [user?.uid, firestoreUser, isUserLoading, getLastUsedListId, setLastUsedListId, clearLastUsedListId]);
 
   // Reset state when user logs out
   useEffect(() => {

@@ -238,6 +238,10 @@ export async function undeleteItem(
  * Soft deletes multiple items atomically using a transaction.
  * Used for the "Clear checked" feature.
  *
+ * Note: Firestore transactions have a ~500 operation limit. This is safe because
+ * lists are limited to 200 items (LIMITS.ITEMS_PER_LIST_MAX), so we write at most
+ * 201 documents (200 items + 1 list count update).
+ *
  * @param listId - The ID of the list containing the items
  * @param itemIds - Array of item IDs to soft delete
  */
@@ -279,6 +283,10 @@ export async function bulkSoftDelete(
 /**
  * Restores multiple soft-deleted items atomically using a transaction.
  * Used for undo of "Clear checked" feature.
+ *
+ * Note: Firestore transactions have a ~500 operation limit. This is safe because
+ * lists are limited to 200 items (LIMITS.ITEMS_PER_LIST_MAX), so we write at most
+ * 201 documents (200 items + 1 list count update).
  *
  * @param listId - The ID of the list containing the items
  * @param itemIds - Array of item IDs to restore

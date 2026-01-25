@@ -35,6 +35,9 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
       return;
     }
 
+    // Reset state when listId changes to avoid showing stale items
+    setState({ items: [], isLoading: true, error: null });
+
     const db = getFirestoreDb();
     const itemsRef = collection(db, 'lists', listId, 'items');
 

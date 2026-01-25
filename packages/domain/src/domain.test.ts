@@ -235,6 +235,11 @@ describe('validators', () => {
       expect(isValidAlias('')).toBe(false);
     });
 
+    it('returns false for whitespace-only alias', () => {
+      expect(isValidAlias(' ')).toBe(false);
+      expect(isValidAlias('   ')).toBe(false);
+    });
+
     it('returns false for alias over 50 characters', () => {
       expect(isValidAlias('a'.repeat(51))).toBe(false);
     });
@@ -278,8 +283,9 @@ describe('constants', () => {
   });
 });
 
-// Helper to create test items
+// Helper to create test items with deterministic defaults
 function createItem(overrides: Partial<Item> = {}): Item {
+  const defaultTimestamp = 1000000;
   return {
     id: 'item-1',
     listId: 'list-1',
@@ -287,8 +293,8 @@ function createItem(overrides: Partial<Item> = {}): Item {
     checked: false,
     deleted: false,
     createdByUserId: 'user-1',
-    serverCreatedAt: Date.now(),
-    serverUpdatedAt: Date.now(),
+    serverCreatedAt: defaultTimestamp,
+    serverUpdatedAt: defaultTimestamp,
     ...overrides,
   };
 }

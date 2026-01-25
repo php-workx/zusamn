@@ -70,6 +70,7 @@ export function useUser(
 
         if (!userSnap.exists()) {
           // Create user document if it doesn't exist
+          // Use merge to avoid race conditions when multiple tabs/devices create simultaneously
           const newUser: Omit<User, 'createdAt'> & { createdAt: ReturnType<typeof serverTimestamp> } = {
             id: userId,
             displayName: options?.displayName ?? '',
@@ -79,7 +80,7 @@ export function useUser(
             createdAt: serverTimestamp() as unknown as ReturnType<typeof serverTimestamp>,
           };
 
-          await setDoc(userRef, newUser);
+          await setDoc(userRef, newUser, { merge: true });
         }
 
         // Set up realtime listener
