@@ -1,4 +1,4 @@
-import { Screen, Text, TopBar, YStack } from '@zusamn/ui';
+import { GhostButton, PrimaryButton, Screen, Text, TopBar, YStack } from '@zusamn/ui';
 import { useAuthContext } from '../../src/providers';
 
 /**
@@ -11,16 +11,20 @@ export default function AccountScreen() {
   return (
     <Screen safeArea={false}>
       <TopBar title="Account" />
-      <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
-        <Text fontSize="$2" color="$text" textAlign="center">
-          {user?.displayName || 'Unknown User'}
-        </Text>
-        <Text fontSize="$1" color="$textMuted" textAlign="center">
-          {user?.email || 'No email'}
-        </Text>
-        <Text fontSize="$1" color="$textMuted" textAlign="center" marginTop="$4">
-          Account settings will appear here.
-        </Text>
+      <YStack flex={1} padding="$4" gap="$5">
+        <YStack gap="$1">
+          <Text fontSize="$3" color="$text">
+            {user?.displayName || 'Unknown User'}
+          </Text>
+          <Text fontSize="$1" color="$textMuted">
+            {user?.email || 'No email'}
+          </Text>
+        </YStack>
+
+        <YStack gap="$3">
+          <PrimaryButton>Logout</PrimaryButton>
+          <GhostButton danger>Delete Account</GhostButton>
+        </YStack>
       </YStack>
     </Screen>
   );
