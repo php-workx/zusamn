@@ -6,7 +6,7 @@ import { useAuthContext } from '../../src/providers';
  * Shows user info and sign out option.
  */
 export default function AccountScreen() {
-  const { user } = useAuthContext();
+  const { user, signOut } = useAuthContext();
 
   return (
     <Screen safeArea={false}>
@@ -22,7 +22,7 @@ export default function AccountScreen() {
         </YStack>
 
         <YStack gap="$3">
-          <PrimaryButton>Logout</PrimaryButton>
+          <PrimaryButton onPress={() => void signOut()}>Logout</PrimaryButton>
           <GhostButton danger>Delete Account</GhostButton>
         </YStack>
       </YStack>

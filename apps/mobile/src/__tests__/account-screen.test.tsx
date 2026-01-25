@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import AccountScreen from '../../app/(tabs)/account';
 
 const mockSignOut = jest.fn();
@@ -71,10 +71,22 @@ jest.mock('@zusamn/ui', () => {
   };
 });
 
+beforeEach(() => {
+  mockSignOut.mockClear();
+});
+
 it('renders display name and action buttons', () => {
   const { getByText } = render(<AccountScreen />);
 
   expect(getByText('Test User')).toBeTruthy();
   expect(getByText('Logout')).toBeTruthy();
   expect(getByText('Delete Account')).toBeTruthy();
+});
+
+it('calls signOut when Logout is pressed', () => {
+  const { getByText } = render(<AccountScreen />);
+
+  fireEvent.press(getByText('Logout'));
+
+  expect(mockSignOut).toHaveBeenCalledTimes(1);
 });
