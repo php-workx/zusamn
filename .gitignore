@@ -17,3 +17,4 @@ lib
 coverage
 test-results
 .worktrees
+/packages/firebase/firestore-debug.log
