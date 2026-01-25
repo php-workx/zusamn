@@ -39,6 +39,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
       - run: pnpm install
       - name: Run tests with coverage
         run: pnpm test
@@ -46,7 +50,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/domain/coverage/lcov.info,packages/ui/coverage/lcov.info
+          files: packages/domain/coverage/lcov.info,packages/ui/coverage/lcov.info,packages/firebase/coverage/lcov.info
           fail_ci_if_error: false
           verbose: true
       - name: Upload test results to Codecov
