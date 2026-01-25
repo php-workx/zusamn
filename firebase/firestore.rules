@@ -59,8 +59,8 @@ service cloud.firestore {
           isMember(listId) &&
           request.resource.data.alias.size() <= 50;
 
-        // Delete: leave list (only if already a member)
-        allow delete: if isAuthenticated() && request.auth.uid == userId && isMember(listId);
+        // Delete: leave list
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
       }
 
       // Items (Subcollection)

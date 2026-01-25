@@ -13,6 +13,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   Timestamp,
 } from 'firebase/firestore';
 
@@ -936,6 +937,33 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
     await assertSucceeds(
       deleteDoc(doc(userDb, 'lists', listId, 'memberships', userId))
     );
+  });
+
+  it('member can remove themselves and delete membership in one batch', async () => {
+    const userId = 'user1';
+    const listId = 'list1';
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, 'lists', listId), {
+        ownerUserId: userId,
+        memberIds: [userId],
+        createdAt: Date.now(),
+      });
+      await setDoc(doc(db, 'lists', listId, 'memberships', userId), {
+        alias: 'My List',
+        joinedAt: Date.now(),
+      });
+    });
+
+    const userContext = testEnv.authenticatedContext(userId);
+    const userDb = userContext.firestore();
+    const batch = writeBatch(userDb);
+
+    batch.update(doc(userDb, 'lists', listId), { memberIds: [] });
+    batch.delete(doc(userDb, 'lists', listId, 'memberships', userId));
+
+    await assertSucceeds(batch.commit());
   });
 
   it('member cannot delete another user membership', async () => {
