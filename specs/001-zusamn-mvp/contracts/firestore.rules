@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helpers ---
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isMember(listId) {
+      return isAuthenticated() &&
+        request.auth.uid in get(/databases/$(database)/documents/lists/$(listId)).data.memberIds;
+    }
+
+    // --- Rules ---
+
+    // Users: Owner access only
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Lists: Members can read/update; Creator can create
+    match /lists/{listId} {
+      allow read: if isMember(listId);
+      
+      allow create: if isAuthenticated() &&
+        request.resource.data.memberIds.size() == 1 &&
+        request.resource.data.memberIds[0] == request.auth.uid;
+
+      allow update: if isMember(listId) &&
+        request.resource.data.memberIds.size() <= 3;
+      
+      // No delete allowed (soft delete or leave only)
+      allow delete: if false;
+
+      // Memberships (Subcollection)
+      match /memberships/{oduserId} {
+        allow read: if isMember(listId);
+
+        // Create: allowed during invite redemption (user being added to memberIds in same transaction)
+        allow create: if isAuthenticated() &&
+          request.auth.uid == oduserId &&
+          request.resource.data.alias.size() <= 50 &&
+          request.auth.uid in getAfter(/databases/$(database)/documents/lists/$(listId)).data.memberIds;
+
+        // Update: only if already a member (e.g., rename alias)
+        allow update: if isAuthenticated() &&
+          request.auth.uid == oduserId &&
+          isMember(listId) &&
+          request.resource.data.alias.size() <= 50;
+
+        // Delete: leave list (only if already a member)
+        allow delete: if isAuthenticated() && request.auth.uid == oduserId && isMember(listId);
+      }
+
+      // Items (Subcollection)
+      match /items/{itemId} {
+        allow read: if isMember(listId);
+        
+        allow create: if isMember(listId) &&
+          request.resource.data.text.size() <= 100;
+          
+        allow update: if isMember(listId) && (
+          // Allow normal updates if not deleted
+          (resource.data.deleted == false) ||
+          // Allow UNDELETE (deleted: true -> deleted: false)
+          (resource.data.deleted == true && request.resource.data.deleted == false)
+        );
+        
+        allow delete: if false;
+      }
+    }
+
+    // Invites (Global)
+    match /invites/{inviteId} {
+      allow read: if isAuthenticated();
+      
+      // CRITICAL: Ensure creator is actually a member of the target list
+      allow create: if isAuthenticated() &&
+        request.resource.data.createdByUserId == request.auth.uid &&
+        request.auth.uid in get(/databases/$(database)/documents/lists/$(request.resource.data.listId)).data.memberIds;
+        
+      allow update: if isAuthenticated() &&
+        resource.data.usedBy == null &&
+        resource.data.expiresAt > request.time &&
+        request.resource.data.usedBy == request.auth.uid;
+    }
+  }
+}
