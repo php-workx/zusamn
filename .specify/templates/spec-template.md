@@ -80,6 +80,19 @@
 <!--
   ACTION REQUIRED: The content in this section represents placeholders.
   Fill them out with the right functional requirements.
+
+  CONSTITUTION CHECK: All requirements must align with Zusamn Constitution principles:
+  1. Speed Over Features - minimize friction in core flow
+  2. Offline-First - never block on connectivity
+  3. Collaboration Without Annoyance - safe, lightweight, small trusted group
+  4. Simplicity Over Power - resist scope creep
+  5. Calm, Clear Design - follow established patterns
+  6. Accessible By Default - inclusive from the start
+  7. Privacy As Restraint - collect only what's needed, no dark patterns
+  8. Focus Protects Quality - ship fewer things well
+  9. Boring Over Clever - obvious solutions, minimal explanation needed
+
+  Specific limits and constraints belong in the spec itself, not the constitution.
 -->
 
 ### Functional Requirements
@@ -94,13 +107,6 @@
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
-
-### Non-Functional Requirements
-
-- **NFR-001**: UI MUST use Tamagui components and the shared `@zusamn/ui` provider.
-- **NFR-002**: For performance-sensitive features, performance targets (load,
-  interaction, latency) MUST be defined here.
-- **NFR-003**: Changes MUST include an automated test plan covering new behavior.
 
 ### Key Entities *(include if feature involves data)*
 
