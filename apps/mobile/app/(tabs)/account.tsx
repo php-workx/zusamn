@@ -1,4 +1,15 @@
-import { GhostButton, PrimaryButton, Screen, Text, TopBar, YStack } from '@zusamn/ui';
+import { useState } from 'react';
+import NetInfo from '@react-native-community/netinfo';
+import { deleteAccount } from '@zusamn/firebase';
+import {
+  ConfirmDialog,
+  GhostButton,
+  PrimaryButton,
+  Screen,
+  Text,
+  TopBar,
+  YStack,
+} from '@zusamn/ui';
 import { useAuthContext } from '../../src/providers';
 
 /**
@@ -7,6 +18,40 @@ import { useAuthContext } from '../../src/providers';
  */
 export default function AccountScreen() {
   const { user, signOut } = useAuthContext();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeletePress = async () => {
+    setDeleteError(null);
+    const state = await NetInfo.fetch();
+    if (!state.isConnected) {
+      setDeleteError('Delete Account requires an internet connection.');
+      return;
+    }
+    setConfirmVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!user) {
+      setDeleteError('No authenticated user.');
+      setConfirmVisible(false);
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount(user.uid);
+      setConfirmVisible(false);
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : 'Failed to delete account.'
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <Screen safeArea={false}>
@@ -23,9 +68,31 @@ export default function AccountScreen() {
 
         <YStack gap="$3">
           <PrimaryButton onPress={() => void signOut()}>Logout</PrimaryButton>
-          <GhostButton danger>Delete Account</GhostButton>
+          <GhostButton
+            danger
+            disabled={isDeleting || !user}
+            onPress={() => void handleDeletePress()}
+          >
+            Delete Account
+          </GhostButton>
+          {deleteError ? (
+            <Text fontSize="$1" color="$danger">
+              {deleteError}
+            </Text>
+          ) : null}
         </YStack>
       </YStack>
+
+      <ConfirmDialog
+        visible={confirmVisible}
+        title="Delete your account?"
+        description="This permanently deletes your account and personal list. Shared lists remain for other members."
+        cancelLabel="Cancel"
+        confirmLabel="Delete"
+        destructive
+        onCancel={() => setConfirmVisible(false)}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </Screen>
   );
 }
