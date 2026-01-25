@@ -131,7 +131,7 @@ export default function LoginScreen() {
           <PrimaryButton
             onPress={handleGoogleSignIn}
             disabled={isButtonDisabled || !googleRequest}
-            loading={isSigningIn && googleResponse?.type === 'success'}
+            loading={isSigningIn}
             accessibilityLabel="Sign in with Google"
           >
             Continue with Google

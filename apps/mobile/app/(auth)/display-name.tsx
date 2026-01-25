@@ -22,6 +22,9 @@ export default function DisplayNameScreen() {
     trimmedName.length > 50 ? 'Name must be 50 characters or less' : null;
 
   const handleSave = async () => {
+    // Guard against duplicate submissions from rapid taps
+    if (isSaving || isLoading) return;
+
     if (!isValid) {
       setLocalError('Please enter a display name');
       return;

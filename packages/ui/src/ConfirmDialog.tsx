@@ -1,14 +1,5 @@
 import { Text, XStack, YStack } from 'tamagui';
 
-export interface ConfirmDialogAction {
-  /** Action label */
-  label: string;
-  /** Called when action is pressed */
-  onPress: () => void;
-  /** Whether this is a destructive action */
-  destructive?: boolean;
-}
-
 export interface ConfirmDialogProps {
   /** Dialog title/message */
   title: string;

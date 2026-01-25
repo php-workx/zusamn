@@ -69,7 +69,7 @@ export function TabBar({ children }: TabBarProps) {
       borderTopColor="$separator"
       paddingBottom="$4" // safe area padding
       minHeight={49}
-      accessible={false}
+      accessible
       accessibilityRole="tablist"
     >
       {children}

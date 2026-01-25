@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Text, XStack } from 'tamagui';
 
 export interface ToastProps {
@@ -27,10 +27,7 @@ export function Toast({
   onUndo,
   duration = 5000,
 }: ToastProps) {
-  const [show, setShow] = useState(visible);
-
   useEffect(() => {
-    setShow(visible);
     if (visible) {
       const timer = setTimeout(() => {
         onDismiss();
@@ -40,7 +37,7 @@ export function Toast({
     return undefined;
   }, [visible, duration, onDismiss]);
 
-  if (!show) return null;
+  if (!visible) return null;
 
   return (
     <XStack
