@@ -1,5 +1,4 @@
 import { useCallback, useRef } from 'react';
-import { Pressable } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { ListRow, Text, XStack } from '@zusamn/ui';
 import type { Item } from '@zusamn/domain';
@@ -58,10 +57,12 @@ export function SwipeableListRow({
       friction={2}
       rightThreshold={40}
     >
-      <Pressable onPress={handlePress} onLongPress={handleLongPress} delayLongPress={500}>
-        {/* Only outer Pressable handles press - ListRow rendered without onPress to avoid double-trigger */}
-        <ListRow text={item.text} checked={item.checked} onPress={() => {}} />
-      </Pressable>
+      <ListRow
+        text={item.text}
+        checked={item.checked}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+      />
     </Swipeable>
   );
 }

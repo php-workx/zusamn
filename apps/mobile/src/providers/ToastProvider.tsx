@@ -73,6 +73,8 @@ interface ToastProviderProps {
  */
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toast, setToast] = useState<ToastState | null>(null);
+  // Track current toast in ref for immediate access (avoids stale closure in rapid succession)
+  const toastRef = useRef<ToastState | null>(null);
   // Store onFinalize in a ref to avoid stale closure issues
   const onFinalizeRef = useRef<(() => void) | undefined>(undefined);
 
@@ -80,6 +82,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     // Call onFinalize if defined
     onFinalizeRef.current?.();
     onFinalizeRef.current = undefined;
+    toastRef.current = null;
     setToast(null);
   }, []);
 
@@ -90,7 +93,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
       onFinalize?: () => void;
     }): string => {
       // If existing toast, finalize it first (previous action can no longer be undone)
-      if (toast) {
+      // Use ref for immediate access - avoids stale closure when called in rapid succession
+      if (toastRef.current) {
         onFinalizeRef.current?.();
       }
 
@@ -100,36 +104,41 @@ export function ToastProvider({ children }: ToastProviderProps) {
       // Store new onFinalize in ref
       onFinalizeRef.current = options.onFinalize;
 
-      // Set new toast state (onFinalize stored in ref, not state)
-      setToast({
+      // Create new toast state
+      const newToast: ToastState = {
         id,
         message: options.message,
         onUndo: options.onUndo,
-      });
+      };
+
+      // Update both ref (immediate) and state (triggers render)
+      toastRef.current = newToast;
+      setToast(newToast);
 
       // Timer is managed by Toast component via duration prop
       // When Toast auto-dismisses, it calls onDismiss which triggers finalizeAndClear
 
       return id;
     },
-    [toast]
+    [] // No dependencies - uses refs for immediate access
   );
 
   const dismissToast = useCallback(() => {
-    if (toast) {
+    if (toastRef.current) {
       finalizeAndClear();
     }
-  }, [toast, finalizeAndClear]);
+  }, [finalizeAndClear]);
 
   const handleUndo = useCallback(() => {
-    if (toast) {
+    if (toastRef.current) {
       // Call onUndo, not onFinalize
-      toast.onUndo();
+      toastRef.current.onUndo();
       // Clear the onFinalize ref since we're undoing
       onFinalizeRef.current = undefined;
+      toastRef.current = null;
       setToast(null);
     }
-  }, [toast]);
+  }, []);
 
   const handleDismiss = useCallback(() => {
     // Called by Toast when it auto-dismisses after duration

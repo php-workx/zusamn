@@ -47,8 +47,8 @@ describe('ListRow', () => {
 
     // Find the clickable element and click it
     const clickable = container.querySelector('[role="checkbox"]');
-    expect(clickable).toBeTruthy();
-    fireEvent.click(clickable!);
+    if (!clickable) throw new Error('Expected checkbox element');
+    fireEvent.click(clickable);
 
     expect(onPress).toHaveBeenCalledTimes(1);
   });

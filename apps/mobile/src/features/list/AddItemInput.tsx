@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { TextInput } from 'react-native';
 import { Text, YStack } from '@zusamn/ui';
 import { MAX_TEXT_LENGTH, MAX_ITEMS_PER_LIST } from '@zusamn/domain';
-import { addItem, getItemCount } from '@zusamn/firebase';
+import { addItem, LIST_FULL_ERROR } from '@zusamn/firebase';
 import { FixedBottomInput } from '../../components';
 
 export interface AddItemInputProps {
@@ -30,22 +30,23 @@ export function AddItemInput({ listId, userId, onWritePending }: AddItemInputPro
     // Clear any previous error
     setError(null);
 
-    // Check item limit
     try {
-      const count = await getItemCount(listId);
-      if (count >= MAX_ITEMS_PER_LIST) {
-        setError(`This list has reached the maximum of ${MAX_ITEMS_PER_LIST} items. Delete some items to add more.`);
-        return;
-      }
-
       setInputValue('');
       onWritePending();
 
+      // addItem uses a transaction to atomically check limit and add item
       await addItem(listId, text, userId);
     } catch (err) {
       // Restore input on error
       setInputValue(text);
-      setError('Failed to add item. Please try again.');
+
+      // Check for specific list full error
+      const message = err instanceof Error ? err.message : '';
+      if (message.startsWith(LIST_FULL_ERROR)) {
+        setError(`This list has reached the maximum of ${MAX_ITEMS_PER_LIST} items. Delete some items to add more.`);
+      } else {
+        setError('Failed to add item. Please try again.');
+      }
     }
   }, [inputValue, listId, userId, onWritePending]);
 

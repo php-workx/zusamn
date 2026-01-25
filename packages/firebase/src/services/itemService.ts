@@ -49,60 +49,77 @@ export async function getItemCount(listId: string): Promise<number> {
   return snapshot.size;
 }
 
+/** Error code for list capacity exceeded */
+export const LIST_FULL_ERROR = 'LIST_FULL';
+
 /**
- * Adds a new item to a shopping list.
+ * Adds a new item to a shopping list using a transaction for atomic limit enforcement.
  *
  * @param listId - The ID of the list to add the item to
  * @param text - The item text (max 100 characters)
  * @param userId - The ID of the user creating the item
  * @returns The created item (with placeholder timestamps until server resolves them)
- * @throws Error if validation fails or item limit (200) is reached
+ * @throws Error with message starting with LIST_FULL_ERROR if limit reached
+ * @throws Error if validation fails
  */
 export async function addItem(
   listId: string,
   text: string,
   userId: string
 ): Promise<Item> {
-  // Validate text
+  // Validate text before starting transaction
   const validation = validateItemText(text);
   if (!validation.valid) {
     throw new Error(validation.error);
   }
 
-  // Check item count limit
-  const currentCount = await getItemCount(listId);
-  if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
-    throw new Error(
-      `Cannot add item: list has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
-    );
-  }
-
-  // Generate item ID using Firestore's auto-ID (crypto.randomUUID not available in RN)
+  const db = getDb();
+  const listRef = doc(db, 'lists', listId);
   const itemId = doc(getItemsCollectionRef(listId)).id;
-
-  // Prepare the item data with server timestamps
-  const itemData = {
-    listId,
-    text: text.trim(),
-    checked: false,
-    deleted: false,
-    createdByUserId: userId,
-    serverCreatedAt: serverTimestamp(),
-    serverUpdatedAt: serverTimestamp(),
-  };
-
-  // Create the item document
   const itemRef = getItemRef(listId, itemId);
-  await setDoc(itemRef, itemData);
+  const trimmedText = text.trim();
 
-  // Return the item object
-  // Note: serverTimestamp() resolves on the server, so we use Date.now() as placeholder
-  // The actual timestamps will be available when reading the document back
+  // Use transaction for atomic count check and item creation
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount = listData.itemCount ?? 0;
+
+    if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
+      throw new Error(
+        `${LIST_FULL_ERROR}: List has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
+      );
+    }
+
+    // Create the item
+    const itemData = {
+      listId,
+      text: trimmedText,
+      checked: false,
+      deleted: false,
+      createdByUserId: userId,
+      serverCreatedAt: serverTimestamp(),
+      serverUpdatedAt: serverTimestamp(),
+    };
+
+    transaction.set(itemRef, itemData);
+
+    // Increment the item count on the list
+    transaction.update(listRef, {
+      itemCount: currentCount + 1,
+    });
+  });
+
+  // Return the item object with placeholder timestamps
   const now = Date.now();
   const item: Item = {
     id: itemId,
     listId,
-    text: text.trim(),
+    text: trimmedText,
     checked: false,
     deleted: false,
     createdByUserId: userId,
@@ -147,7 +164,7 @@ export async function toggleItemChecked(
 
 /**
  * Soft deletes an item by setting deleted: true.
- * This is a tombstone approach that supports undo functionality.
+ * Uses a transaction to atomically update the list's itemCount.
  *
  * @param listId - The ID of the list containing the item
  * @param itemId - The ID of the item to soft delete
@@ -156,17 +173,34 @@ export async function softDeleteItem(
   listId: string,
   itemId: string
 ): Promise<void> {
+  const db = getDb();
+  const listRef = doc(db, 'lists', listId);
   const itemRef = getItemRef(listId, itemId);
 
-  await updateDoc(itemRef, {
-    deleted: true,
-    serverUpdatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount = listData.itemCount ?? 0;
+
+    transaction.update(itemRef, {
+      deleted: true,
+      serverUpdatedAt: serverTimestamp(),
+    });
+
+    // Decrement the item count (min 0)
+    transaction.update(listRef, {
+      itemCount: Math.max(0, currentCount - 1),
+    });
   });
 }
 
 /**
  * Restores a soft-deleted item by setting deleted: false.
- * Used when user taps "Undo" on the delete toast.
+ * Uses a transaction to atomically update the list's itemCount.
  *
  * @param listId - The ID of the list containing the item
  * @param itemId - The ID of the item to restore
@@ -175,16 +209,33 @@ export async function undeleteItem(
   listId: string,
   itemId: string
 ): Promise<void> {
+  const db = getDb();
+  const listRef = doc(db, 'lists', listId);
   const itemRef = getItemRef(listId, itemId);
 
-  await updateDoc(itemRef, {
-    deleted: false,
-    serverUpdatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount = listData.itemCount ?? 0;
+
+    transaction.update(itemRef, {
+      deleted: false,
+      serverUpdatedAt: serverTimestamp(),
+    });
+
+    // Increment the item count
+    transaction.update(listRef, {
+      itemCount: currentCount + 1,
+    });
   });
 }
 
 /**
- * Soft deletes multiple items atomically using a batch write.
+ * Soft deletes multiple items atomically using a transaction.
  * Used for the "Clear checked" feature.
  *
  * @param listId - The ID of the list containing the items
@@ -199,21 +250,34 @@ export async function bulkSoftDelete(
   }
 
   const db = getDb();
-  const batch = writeBatch(db);
+  const listRef = doc(db, 'lists', listId);
 
-  for (const itemId of itemIds) {
-    const itemRef = getItemRef(listId, itemId);
-    batch.update(itemRef, {
-      deleted: true,
-      serverUpdatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount = listData.itemCount ?? 0;
+
+    for (const itemId of itemIds) {
+      const itemRef = getItemRef(listId, itemId);
+      transaction.update(itemRef, {
+        deleted: true,
+        serverUpdatedAt: serverTimestamp(),
+      });
+    }
+
+    // Decrement the item count by the number of deleted items
+    transaction.update(listRef, {
+      itemCount: Math.max(0, currentCount - itemIds.length),
     });
-  }
-
-  await batch.commit();
+  });
 }
 
 /**
- * Restores multiple soft-deleted items atomically using a batch write.
+ * Restores multiple soft-deleted items atomically using a transaction.
  * Used for undo of "Clear checked" feature.
  *
  * @param listId - The ID of the list containing the items
@@ -228,15 +292,28 @@ export async function bulkUndelete(
   }
 
   const db = getDb();
-  const batch = writeBatch(db);
+  const listRef = doc(db, 'lists', listId);
 
-  for (const itemId of itemIds) {
-    const itemRef = getItemRef(listId, itemId);
-    batch.update(itemRef, {
-      deleted: false,
-      serverUpdatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount = listData.itemCount ?? 0;
+
+    for (const itemId of itemIds) {
+      const itemRef = getItemRef(listId, itemId);
+      transaction.update(itemRef, {
+        deleted: false,
+        serverUpdatedAt: serverTimestamp(),
+      });
+    }
+
+    // Increment the item count by the number of restored items
+    transaction.update(listRef, {
+      itemCount: currentCount + itemIds.length,
     });
-  }
-
-  await batch.commit();
+  });
 }

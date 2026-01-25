@@ -33,7 +33,8 @@ describe('OverflowMenu', () => {
     const { container } = render(<OverflowMenu items={items} />, { wrapper });
 
     const trigger = container.querySelector('[aria-label="More options"]');
-    fireEvent.click(trigger!);
+    if (!trigger) throw new Error('Expected trigger element');
+    fireEvent.click(trigger);
 
     // Menu items should now be visible
     expect(container.textContent).toContain('Edit');
@@ -50,12 +51,13 @@ describe('OverflowMenu', () => {
 
     // Open menu
     const trigger = container.querySelector('[aria-label="More options"]');
-    fireEvent.click(trigger!);
+    if (!trigger) throw new Error('Expected trigger element');
+    fireEvent.click(trigger);
 
     // Click the menu item (use role="menuitem")
     const editItem = container.querySelector('[role="menuitem"]');
-    expect(editItem).toBeTruthy();
-    fireEvent.click(editItem!);
+    if (!editItem) throw new Error('Expected menu item element');
+    fireEvent.click(editItem);
 
     expect(onEdit).toHaveBeenCalledTimes(1);
     // Menu should be closed - no menuitem should exist
@@ -67,13 +69,14 @@ describe('OverflowMenu', () => {
     const { container } = render(<OverflowMenu items={items} />, { wrapper });
 
     const trigger = container.querySelector('[aria-label="More options"]');
+    if (!trigger) throw new Error('Expected trigger element');
 
     // Open menu
-    fireEvent.click(trigger!);
+    fireEvent.click(trigger);
     expect(container.textContent).toContain('Edit');
 
     // Close menu
-    fireEvent.click(trigger!);
+    fireEvent.click(trigger);
     expect(container.textContent).not.toContain('Edit');
   });
 });
