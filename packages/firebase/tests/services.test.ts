@@ -133,13 +133,14 @@ describe('itemService (via Firestore)', () => {
   const userId = 'test-user';
 
   beforeEach(async () => {
-    // Create a list for testing items
+    // Create a list for testing items (with itemCount for service compatibility)
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const db = context.firestore();
       await setDoc(doc(db, 'lists', listId), {
         ownerUserId: userId,
         memberIds: [userId],
         createdAt: Date.now(),
+        itemCount: 0,
       });
     });
   });
@@ -218,14 +219,21 @@ describe('itemService (via Firestore)', () => {
           serverUpdatedAt: Date.now(),
         });
 
+        // Verify item was created
+        const created = await getDoc(itemRef);
+        expect(created.exists()).toBe(true);
+        expect(created.data()?.deleted).toBe(false);
+
         // Soft delete
         await setDoc(itemRef, { deleted: true }, { merge: true });
         const deleted = await getDoc(itemRef);
+        expect(deleted.exists()).toBe(true);
         expect(deleted.data()?.deleted).toBe(true);
 
         // Restore
         await setDoc(itemRef, { deleted: false }, { merge: true });
         const restored = await getDoc(itemRef);
+        expect(restored.exists()).toBe(true);
         expect(restored.data()?.deleted).toBe(false);
       });
     });
@@ -292,6 +300,12 @@ describe('itemService (via Firestore)', () => {
             serverCreatedAt: Date.now(),
             serverUpdatedAt: Date.now(),
           });
+        }
+
+        // Verify items were created
+        for (const id of itemIds) {
+          const itemDoc = await getDoc(doc(db, 'lists', listId, 'items', id));
+          expect(itemDoc.exists()).toBe(true);
         }
 
         // Bulk delete using batch
