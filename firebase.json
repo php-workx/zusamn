@@ -19,5 +19,16 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "emulators": {
+    "firestore": {
+      "host": "localhost",
+      "port": 8080
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true
   }
 }

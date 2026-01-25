@@ -1,0 +1,129 @@
+import {
+  type Auth,
+  type User as FirebaseUser,
+  GoogleAuthProvider,
+  OAuthProvider,
+  type Unsubscribe,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  signInWithCredential,
+  signOut as firebaseSignOut,
+  updateProfile,
+} from 'firebase/auth';
+import { initFirebase } from './client';
+
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  providerId: string | null;
+}
+
+export interface AuthState {
+  user: AuthUser | null;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+/**
+ * Convert Firebase User to our AuthUser type
+ */
+function toAuthUser(firebaseUser: FirebaseUser): AuthUser {
+  const providerData = firebaseUser.providerData[0];
+  return {
+    uid: firebaseUser.uid,
+    email: firebaseUser.email,
+    displayName: firebaseUser.displayName,
+    photoURL: firebaseUser.photoURL,
+    providerId: providerData?.providerId ?? null,
+  };
+}
+
+/**
+ * Get the Firebase Auth instance
+ */
+export function getFirebaseAuth(): Auth {
+  const { auth } = initFirebase();
+  return auth;
+}
+
+/**
+ * Subscribe to auth state changes.
+ * Returns an unsubscribe function.
+ */
+export function onAuthStateChanged(
+  callback: (user: AuthUser | null) => void
+): Unsubscribe {
+  const auth = getFirebaseAuth();
+  return firebaseOnAuthStateChanged(auth, (firebaseUser) => {
+    callback(firebaseUser ? toAuthUser(firebaseUser) : null);
+  });
+}
+
+/**
+ * Sign in with Google using an ID token from expo-auth-session.
+ * The idToken should come from Google OAuth via expo-auth-session.
+ */
+export async function signInWithGoogle(idToken: string): Promise<AuthUser> {
+  const auth = getFirebaseAuth();
+  const credential = GoogleAuthProvider.credential(idToken);
+  const result = await signInWithCredential(auth, credential);
+  return toAuthUser(result.user);
+}
+
+/**
+ * Sign in with Apple using an identity token from expo-auth-session.
+ * The identityToken should come from Apple OAuth via expo-apple-authentication.
+ */
+export async function signInWithApple(
+  identityToken: string,
+  nonce?: string
+): Promise<AuthUser> {
+  const auth = getFirebaseAuth();
+  const provider = new OAuthProvider('apple.com');
+  const credential = provider.credential({
+    idToken: identityToken,
+    rawNonce: nonce,
+  });
+  const result = await signInWithCredential(auth, credential);
+  return toAuthUser(result.user);
+}
+
+/**
+ * Sign out the current user
+ */
+export async function signOut(): Promise<void> {
+  const auth = getFirebaseAuth();
+  await firebaseSignOut(auth);
+}
+
+/**
+ * Check if a user needs to set up their display name.
+ * Returns true if displayName is null or empty.
+ */
+export function needsDisplayNameSetup(user: AuthUser | null): boolean {
+  if (!user) return false;
+  return !user.displayName || user.displayName.trim().length === 0;
+}
+
+/**
+ * Get the current user synchronously (may be null if auth hasn't initialized)
+ */
+export function getCurrentUser(): AuthUser | null {
+  const auth = getFirebaseAuth();
+  return auth.currentUser ? toAuthUser(auth.currentUser) : null;
+}
+
+/**
+ * Update the current user's display name.
+ * Used when social login does not provide a first name.
+ */
+export async function updateDisplayName(displayName: string): Promise<AuthUser> {
+  const auth = getFirebaseAuth();
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('No authenticated user');
+  }
+  await updateProfile(currentUser, { displayName });
+  return toAuthUser(currentUser);
+}
