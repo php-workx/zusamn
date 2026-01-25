@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@react-native-community/netinfo": "^11.4.1",
+    "@zusamn/domain": "workspace:*",
     "@zusamn/firebase": "workspace:*",
     "@zusamn/ui": "workspace:*",
     "expo": "^54.0.32",
@@ -25,6 +26,7 @@
     "expo-web-browser": "^15.0.10",
     "react": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-gesture-handler": "^2.24.0",
     "react-native-mmkv": "^3.2.0"
   }
 }
