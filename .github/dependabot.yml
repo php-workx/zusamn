@@ -1,37 +1,83 @@
 version: 2
 
-x-common-config: &common-config
-  schedule:
-    interval: "weekly"
-  groups:
-    security:
-      applies-to: "security-updates"
-      patterns:
-        - "*"
-  open-pull-requests-limit: 0
-
 updates:
   - package-ecosystem: "npm"
     directory: "/"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/apps/mobile"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/apps/web"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/packages/ui"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/packages/domain"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/packages/firebase"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0
   - package-ecosystem: "npm"
     directory: "/firebase/functions"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0
   - package-ecosystem: "github-actions"
     directory: "/"
-    <<: *common-config
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    open-pull-requests-limit: 0

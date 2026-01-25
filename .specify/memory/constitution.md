@@ -1,89 +1,90 @@
-<!-- Sync Impact Report
-Version change: 1.0.1 -> 1.1.0
-Modified principles:
-- Placeholder Principle 1 -> I. Code Quality & Type Safety
-- Placeholder Principle 2 -> II. Test-Backed Changes
-- Placeholder Principle 3 -> III. UX Consistency via Tamagui
-- Placeholder Principle 4 -> IV. Configuration & Platform Hygiene
-Added sections: Platform Constraints; Workflow & Quality Gates; Optional Constraints
-Removed sections: None (Performance moved from Core Principles to Optional Constraints)
-Templates requiring updates: ✅ .specify/templates/plan-template.md; ✅ .specify/templates/spec-template.md;
-✅ .specify/templates/tasks-template.md; ✅ .specify/templates/commands/plan.md;
-✅ .specify/templates/commands/spec.md; ✅ .specify/templates/commands/tasks.md
-Follow-up TODOs: None
--->
-# Zusamn Monorepo Constitution
+# Zusamn Constitution
+
+This document defines the enduring principles that guide all product and engineering decisions. It describes **what we value** and **how we make tradeoffs**, not specific features, limits, or technologies.
+
+Specific constraints (limits, tech choices, release scope) belong in feature specifications.
+
+---
 
 ## Core Principles
 
-### I. Code Quality & Type Safety
-All TypeScript must remain strict. New types belong in `packages/domain` and
-must be reused across apps and functions instead of duplicating models. Linting
-and typechecking must pass for every change.
-Rationale: a shared, strict type system prevents drift and avoids runtime defects.
+### 1. Speed Over Features
 
-### II. Test-Backed Changes
-Every behavior change must include automated tests that fail without the change
-and pass with it. Unit tests cover domain logic; integration tests cover app or
-function flows that cross module boundaries. Bug fixes must include regression
-coverage.
-Rationale: tests are the primary safeguard for reliability and future refactors.
+The app must feel instant and responsive, even when work is happening in the background. When choosing between a faster experience and a richer feature, choose speed. Users open a shopping list in a hurry—at the store, while cooking, in passing. Every tap, every loading state, every modal is friction.
 
-### III. UX Consistency via Tamagui
-All UI must use Tamagui components and the shared `@zusamn/ui` provider. Visual
-tokens, spacing, typography, and interaction patterns must remain consistent
-across apps; deviations require an explicit decision and shared token updates.
-Rationale: consistent UI reduces user friction and keeps maintenance predictable.
+**Tradeoff guidance**: If a feature adds complexity to the core flow (view → add → check), it needs exceptional justification. A simpler, faster experience beats a powerful, slower one.
 
-### IV. Configuration & Platform Hygiene
-No secrets or real Firebase config may be committed. Use environment variables
-and maintain `.env.example`. Firebase Cloud Functions live in
-`firebase/functions`, and Firestore rules live in `firebase/firestore.rules`.
-Use pnpm + Turborepo for all scripts and do not add Yarn/npm lockfiles.
-Rationale: predictable structure and safe configuration reduce operational risk.
+### 2. Offline-First
 
-## Platform Constraints
+The app must work without a network connection. Shopping happens in basements, rural stores, and airplane mode. Users should not be blocked from viewing or editing their list due to connectivity.
 
-- Use pnpm + Turborepo for all scripts; do not add Yarn/npm lockfiles.
-- Keep TypeScript strict; prefer types in `packages/domain` and reuse across
-  apps/functions.
-- No secrets or real Firebase config in code or docs; use env vars and
-  `.env.example` only.
-- UI must use Tamagui components and the shared `@zusamn/ui` provider.
-- Cloud Functions live in `firebase/functions`; Firestore rules in
-  `firebase/firestore.rules`.
+**Tradeoff guidance**: Design data models and sync strategies assuming offline is the default state, not an edge case. Degrade gracefully; never block core actions on connectivity.
 
-## Workflow & Quality Gates
+### 3. Collaboration Without Annoyance
 
-- Use conventional commits (feat:, fix:, docs:, etc.).
-- No changes to `main` without a PR.
-- Every changeset (work item, task) must live in a feature branch pushed to the
-  remote repository.
-- Every PR must be reviewed by at least one team member.
-- `turbo lint`, `turbo typecheck`, and `turbo test` must pass before pushing to
-  the remote.
-- Tests required by Principle II must run and pass before merge.
-- UX changes must use shared components and tokens; any new patterns must be
-  reviewed for cross-app consistency.
-- New environment variables must be added to `.env.example` and documented in
-  the relevant README or spec.
+Sharing should feel safe and lightweight. Users share lists with family and roommates—people they trust but don't want to spam. No accidental oversharing, no notification fatigue, no confusing permission models.
 
-## Optional Constraints
+Collaboration assumes a small, trusted group; features designed for large or anonymous groups are out of scope.
 
-- Performance Budgets: For performance-sensitive features, define targets
-  (load, interaction, and backend latency where applicable) in the plan/spec
-  and verify they are met before shipping. Changes must not regress established
-  performance baselines.
+**Tradeoff guidance**: Prefer implicit trust (all members equal) over complex permission hierarchies. Prefer in-app awareness over push notifications. Make sharing easy to start and easy to leave.
+
+### 4. Simplicity Over Power
+
+This is a shopping list, not a life management system. Every feature we add is a feature users must learn, maintain, and navigate around. The best feature is often the one we don't build.
+
+**Tradeoff guidance**: When in doubt, cut it. If a feature doesn't directly improve the core loop, reject it. Resist scope creep from adjacent domains (recipes, pantry, meal planning, coupons).
+
+### 5. Calm, Clear Design
+
+The visual language should feel calm and familiar—closer to Apple Reminders than to a power-user productivity app. Whitespace, subtle separators, rounded corners, predictable patterns.
+
+**Tradeoff guidance**: Consistency beats novelty. Use established patterns. New UI components must earn their place by solving a problem existing components cannot.
+
+### 6. Accessible By Default
+
+The app must be usable by people with different abilities. This isn't a checkbox—it's a design constraint that shapes decisions from the start.
+
+**Tradeoff guidance**: Touch targets must be comfortable. Text must be readable. Screen readers must work. Keyboard users (web) must not be blocked. These are requirements, not nice-to-haves.
+
+### 7. Privacy As Restraint
+
+Collect only what the app needs to function. Users share personal data (what they eat, who they live with) implicitly through their lists. Respect that trust by minimizing what we store and never selling or sharing it.
+
+No dark patterns, growth hacks, or behavioral manipulation.
+
+**Tradeoff guidance**: When designing a feature, ask "do we need this data?" before "how do we store this data?" Prefer client-side logic over server-side tracking.
+
+### 8. Focus Protects Quality
+
+Saying no to features protects the quality of the features we ship. A small, polished app beats a large, buggy one. Scope discipline is a feature.
+
+**Tradeoff guidance**: Every release should do fewer things better, not more things adequately. Defer good ideas to future releases rather than shipping them half-baked.
+
+### 9. Boring Over Clever
+
+Prefer simple, understandable solutions over clever abstractions. Code and design should be obvious to the next person who reads it—including future you, and including AI agents.
+
+**Tradeoff guidance**: If a solution requires significant explanation to justify itself, it is likely the wrong solution. Choose the approach that needs the least documentation.
+
+---
 
 ## Governance
 
-- This constitution supersedes all other local practices and templates.
-- Amendments require a PR that updates this document, includes rationale, and
-  documents migration or roll-out impact.
-- Versioning follows Semantic Versioning: MAJOR for breaking governance changes,
-  MINOR for new principles or material expansions, PATCH for clarifications.
-- Every spec/plan must include a Constitution Check; reviewers must block
-  non-compliant changes unless an explicit, time-boxed exception is documented
-  with owner, rationale, and rollback plan.
+This constitution changes rarely. It defines values, not implementations.
 
-**Version**: 1.1.0 | **Ratified**: 2026-01-23 | **Last Amended**: 2026-01-24
+**When to amend**:
+- A core value is discovered to be wrong or missing
+- Two principles conflict in ways not resolvable by tradeoff guidance
+- The product's fundamental purpose changes
+
+**When NOT to amend**:
+- Adding or changing feature limits
+- Choosing or changing technologies
+- Scoping a specific release
+- Adding validation or testing requirements
+
+Amendments require written rationale explaining why the existing principles are insufficient.
+
+---
+
+**Version**: 2.1.0 | **Ratified**: 2026-01-24
