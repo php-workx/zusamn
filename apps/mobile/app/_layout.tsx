@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { AppProvider } from '@zusamn/ui';
-import { AuthProvider, useAuthContext } from '../src/providers';
+import { AuthProvider, ToastProvider, useAuthContext } from '../src/providers';
 
 /**
  * Auth guard component that handles routing based on authentication state.
@@ -54,9 +54,11 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <AuthProvider>
-        <AuthGuard>
-          <Slot />
-        </AuthGuard>
+        <ToastProvider>
+          <AuthGuard>
+            <Slot />
+          </AuthGuard>
+        </ToastProvider>
       </AuthProvider>
     </AppProvider>
   );
