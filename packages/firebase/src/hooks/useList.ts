@@ -43,6 +43,9 @@ export function useList(listId: string | null | undefined): UseListReturn {
       return;
     }
 
+    // Reset state when listId changes to avoid showing stale data
+    setState({ list: null, isLoading: true, error: null });
+
     const db = getFirestoreDb();
     const listRef = doc(db, 'lists', listId);
 

@@ -79,6 +79,7 @@ export function useSyncStatus(): SyncStatus {
     syncTimeoutRef.current = setTimeout(() => {
       // After 30 seconds, assume sync is complete or offline
       // The offline indicator should take precedence in that case
+      setHasPendingWrites(false);
       syncTimeoutRef.current = null;
     }, 30000);
   }, []);

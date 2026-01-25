@@ -59,7 +59,8 @@ export function SwipeableListRow({
       rightThreshold={40}
     >
       <Pressable onPress={handlePress} onLongPress={handleLongPress} delayLongPress={500}>
-        <ListRow text={item.text} checked={item.checked} onPress={handlePress} />
+        {/* Only outer Pressable handles press - ListRow rendered without onPress to avoid double-trigger */}
+        <ListRow text={item.text} checked={item.checked} onPress={() => {}} />
       </Pressable>
     </Swipeable>
   );

@@ -48,6 +48,9 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
   });
 
   useEffect(() => {
+    // Abort flag to prevent state updates after cleanup (logout race condition)
+    let cancelled = false;
+
     async function initializePersonalList() {
       if (!user?.uid || !firestoreUser || isUserLoading) {
         return;
@@ -57,13 +60,17 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
         // Check for last used list first
         const lastListId = getLastUsedListId();
         if (lastListId) {
-          setListId(lastListId);
-          setIsInitializing(false);
+          if (!cancelled) {
+            setListId(lastListId);
+            setIsInitializing(false);
+          }
           return;
         }
 
         // Check for existing personal list
         const existingList = await getPersonalList(user.uid);
+        if (cancelled) return;
+
         if (existingList) {
           setListId(existingList.list.id);
           setLastUsedListId(existingList.list.id);
@@ -76,10 +83,13 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
           user.uid,
           firestoreUser.locale
         );
+        if (cancelled) return;
+
         setListId(newList.id);
         setLastUsedListId(newList.id);
         setIsInitializing(false);
       } catch (err) {
+        if (cancelled) return;
         setError(
           err instanceof Error ? err : new Error('Failed to initialize list')
         );
@@ -88,6 +98,10 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
     }
 
     initializePersonalList();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.uid, firestoreUser, isUserLoading, getLastUsedListId, setLastUsedListId]);
 
   // Reset state when user logs out

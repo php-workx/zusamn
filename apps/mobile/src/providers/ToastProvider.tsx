@@ -6,14 +6,13 @@ import React, {
   useRef,
   type ReactNode,
 } from 'react';
+import * as Crypto from 'expo-crypto';
 import { Toast } from '@zusamn/ui';
 
 interface ToastState {
   id: string;
   message: string;
   onUndo: () => void;
-  /** Called when toast is dismissed without undo (timeout or replaced) */
-  onFinalize?: () => void;
 }
 
 export interface ToastContextValue {
@@ -105,18 +104,17 @@ export function ToastProvider({ children }: ToastProviderProps) {
         onFinalizeRef.current?.();
       }
 
-      // Generate new ID
-      const id = crypto.randomUUID();
+      // Generate new ID using expo-crypto (crypto.randomUUID not available in RN)
+      const id = Crypto.randomUUID();
 
       // Store new onFinalize in ref
       onFinalizeRef.current = options.onFinalize;
 
-      // Set new toast state
+      // Set new toast state (onFinalize stored in ref, not state)
       setToast({
         id,
         message: options.message,
         onUndo: options.onUndo,
-        onFinalize: options.onFinalize,
       });
 
       // Start timeout - when it fires, finalize and clear

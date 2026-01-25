@@ -19,14 +19,12 @@ function getDefaultAlias(locale: Locale): string {
 }
 
 /**
- * Generates a UUIDv4.
+ * Generates a unique list ID using Firestore's auto-ID.
+ * More secure and collision-resistant than Math.random-based UUIDs.
  */
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+function generateListId(): string {
+  const db = getDb();
+  return doc(collection(db, 'lists')).id;
 }
 
 /**
@@ -45,7 +43,7 @@ export async function createPersonalList(
   locale: Locale
 ): Promise<{ list: List; membership: Membership }> {
   const db = getDb();
-  const listId = generateUUID();
+  const listId = generateListId();
   const now = Timestamp.now().toMillis();
   const alias = getDefaultAlias(locale);
 

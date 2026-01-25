@@ -70,6 +70,9 @@ export function useUser(
       return;
     }
 
+    // Reset state when userId changes to avoid cross-user data bleed
+    setState({ user: null, isLoading: true, error: null });
+
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     let unsubscribe: (() => void) | undefined;

@@ -9,6 +9,7 @@ import {
   query,
   where,
   writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
 import type { Item } from '@zusamn/domain';
@@ -76,8 +77,8 @@ export async function addItem(
     );
   }
 
-  // Generate UUIDv4 for the item
-  const itemId = crypto.randomUUID();
+  // Generate item ID using Firestore's auto-ID (crypto.randomUUID not available in RN)
+  const itemId = doc(getItemsCollectionRef(listId)).id;
 
   // Prepare the item data with server timestamps
   const itemData = {
@@ -114,6 +115,7 @@ export async function addItem(
 
 /**
  * Toggles the checked state of an item.
+ * Uses a transaction to prevent race conditions from concurrent toggles.
  *
  * @param listId - The ID of the list containing the item
  * @param itemId - The ID of the item to toggle
@@ -123,21 +125,23 @@ export async function toggleItemChecked(
   listId: string,
   itemId: string
 ): Promise<void> {
+  const db = getDb();
   const itemRef = getItemRef(listId, itemId);
 
-  // Get current item state
-  const itemSnapshot = await getDoc(itemRef);
-  if (!itemSnapshot.exists()) {
-    throw new Error(`Item not found: ${itemId}`);
-  }
+  // Use transaction to atomically read and write
+  await runTransaction(db, async (transaction) => {
+    const itemSnapshot = await transaction.get(itemRef);
+    if (!itemSnapshot.exists()) {
+      throw new Error(`Item not found: ${itemId}`);
+    }
 
-  const currentData = itemSnapshot.data();
-  const newCheckedState = !currentData.checked;
+    const currentData = itemSnapshot.data();
+    const newCheckedState = !currentData.checked;
 
-  // Update the item
-  await updateDoc(itemRef, {
-    checked: newCheckedState,
-    serverUpdatedAt: serverTimestamp(),
+    transaction.update(itemRef, {
+      checked: newCheckedState,
+      serverUpdatedAt: serverTimestamp(),
+    });
   });
 }
 
