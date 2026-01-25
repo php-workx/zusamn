@@ -10,7 +10,8 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "echo 'Mobile build handled by EAS' && exit 0"
   },
   "dependencies": {
     "@zusamn/firebase": "workspace:*",
