@@ -979,7 +979,7 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
     const userDb = userContext.firestore();
     const batch = writeBatch(userDb);
 
-    batch.update(doc(userDb, 'lists', listId), { memberIds: [] });
+    batch.delete(doc(userDb, 'lists', listId));
     batch.delete(doc(userDb, 'lists', listId, 'memberships', userId));
 
     await assertSucceeds(batch.commit());

@@ -8,9 +8,13 @@ import {
   writeBatch,
   type Firestore,
 } from 'firebase/firestore';
+import { FirebaseError } from 'firebase/app';
 import { deleteUser } from 'firebase/auth';
 import { initFirebase } from '../client';
 import { signOut } from '../auth';
+
+const isReauthRequiredError = (error: unknown): boolean =>
+  error instanceof FirebaseError && error.code === 'auth/requires-recent-login';
 
 export async function deleteAccountWithDb(
   db: Firestore,
@@ -52,26 +56,20 @@ export async function deleteAccountWithDb(
 
 export async function deleteAccount(userId: string): Promise<void> {
   const { db, auth } = initFirebase();
-  await deleteAccountWithDb(db, userId);
-
-  const user = auth.currentUser;
-  if (!user) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
     throw new Error('No authenticated user.');
   }
 
+  await deleteAccountWithDb(db, userId);
   try {
-    await deleteUser(user);
-    await signOut();
+    await deleteUser(currentUser);
   } catch (error) {
-    if (
-      error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      (error as { code?: string }).code === 'auth/requires-recent-login'
-    ) {
+    if (isReauthRequiredError(error)) {
       throw error;
     }
     await signOut();
     throw error;
   }
+  await signOut();
 }
