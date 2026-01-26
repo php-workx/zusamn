@@ -39,13 +39,13 @@ export async function deleteAccountWithDb(
       memberIds.length === 1 &&
       memberIds[0] === userId;
 
+    const listUpdates: Record<string, unknown> = {
+      memberIds: arrayRemove(userId),
+    };
     if (isPersonal) {
-      batch.delete(docSnap.ref);
-      batch.delete(doc(db, 'lists', docSnap.id, 'memberships', userId));
-      continue;
+      listUpdates.deleted = true;
     }
-
-    batch.update(docSnap.ref, { memberIds: arrayRemove(userId) });
+    batch.update(docSnap.ref, listUpdates);
     batch.delete(doc(db, 'lists', docSnap.id, 'memberships', userId));
   }
 
