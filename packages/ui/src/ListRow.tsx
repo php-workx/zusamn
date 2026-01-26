@@ -1,5 +1,9 @@
-import type { AccessibilityActionEvent } from 'react-native';
 import { Text, XStack, YStack } from 'tamagui';
+
+/** Accessibility action event type (matches React Native's AccessibilityActionEvent) */
+interface AccessibilityActionEvent {
+  nativeEvent: { actionName: string };
+}
 
 export interface ListRowProps {
   /** Item text label */
