@@ -30,11 +30,11 @@ export function ItemList({ listId, items, onWritePending }: ItemListProps) {
       onWritePending();
       try {
         await toggleItemChecked(listId, item.id);
-      } catch {
-        // Silent error handling - UI will reflect actual state
+      } catch (error) {
+        showError('Unable to update item. Please try again.', error);
       }
     },
-    [listId, onWritePending]
+    [listId, onWritePending, showError]
   );
 
   const handleDelete = useCallback(

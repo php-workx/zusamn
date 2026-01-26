@@ -86,9 +86,9 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
           }
         },
       });
-    } catch {
+    } catch (error) {
       clearWritePending();
-      showError('Unable to clear checked items. Please try again.');
+      showError('Unable to clear checked items. Please try again.', error);
     }
   }, [
     listId,

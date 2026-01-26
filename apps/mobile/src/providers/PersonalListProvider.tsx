@@ -99,12 +99,15 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
             })
             .catch((err) => {
               if (cancelled) return;
-              console.error('Failed to validate cached personal list', err);
-              setError(
-                err instanceof Error
-                  ? err
-                  : new Error('Failed to initialize list')
-              );
+              console.warn('Failed to validate cached personal list', err);
+              const cachedListId = getLastUsedListId();
+              if (!cachedListId) {
+                setError(
+                  err instanceof Error
+                    ? err
+                    : new Error('Failed to initialize list')
+                );
+              }
             });
           return;
         }
