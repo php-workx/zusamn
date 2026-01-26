@@ -43,7 +43,7 @@ beforeEach(async () => {
 });
 
 describe('deleteAccountWithDb', () => {
-  it('removes memberships, updates lists, soft-deletes personal list, and deletes user', async () => {
+  it('removes memberships, updates lists, deletes personal list, and deletes user', async () => {
     const userId = 'user-1';
     const otherUserId = 'user-2';
     const personalListId = 'list-personal';
@@ -128,9 +128,7 @@ describe('deleteAccountWithDb', () => {
       expect(otherMembership.exists()).toBe(true);
 
       const personalList = await getDoc(doc(adminDb, 'lists', personalListId));
-      expect(personalList.exists()).toBe(true);
-      expect(personalList.data()?.deleted).toBe(true);
-      expect(personalList.data()?.memberIds).toEqual([]);
+      expect(personalList.exists()).toBe(false);
 
       const sharedList = await getDoc(doc(adminDb, 'lists', sharedListId));
       expect(sharedList.exists()).toBe(true);
@@ -144,7 +142,7 @@ describe('deleteAccountWithDb', () => {
 
       const listDocs = await getDocs(collection(adminDb, 'lists'));
       const listIds = listDocs.docs.map((docSnap) => docSnap.id).sort();
-      expect(listIds).toEqual([personalListId, sharedListId].sort());
+      expect(listIds).toEqual([sharedListId]);
     });
   });
 });

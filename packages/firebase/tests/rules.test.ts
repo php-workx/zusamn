@@ -316,7 +316,7 @@ describe('List documents (/lists/{listId})', () => {
       const db = context.firestore();
       await setDoc(doc(db, 'lists', listId), {
         ownerUserId: userId,
-        memberIds: [userId],
+        memberIds: [userId, 'user2'],
         createdAt: Date.now(),
       });
     });
@@ -324,6 +324,25 @@ describe('List documents (/lists/{listId})', () => {
     const userContext = testEnv.authenticatedContext(userId);
     const userDb = userContext.firestore();
     await assertFails(deleteDoc(doc(userDb, 'lists', listId)));
+  });
+
+  it('member can delete a list if they are the sole member', async () => {
+    const userId = 'user1';
+    const listId = 'list1';
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, 'lists', listId), {
+        ownerUserId: userId,
+        memberIds: [userId],
+        createdAt: Date.now(),
+      });
+    });
+
+    const userContext = testEnv.authenticatedContext(userId);
+    const userDb = userContext.firestore();
+
+    await assertSucceeds(deleteDoc(doc(userDb, 'lists', listId)));
   });
 });
 
