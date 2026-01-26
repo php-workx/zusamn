@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, type TextInput, type ListRenderItemInfo } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  type TextInput,
+  type ListRenderItemInfo,
+} from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import {
   EmptyState,
@@ -44,6 +49,10 @@ export default function ListDetailScreen() {
   const { isConnected } = useNetworkStatus();
   const { hasPendingWrites, markWritePending } = useSyncStatus();
   const { getLastUsedListId, setLastUsedListId } = useLastUsedList();
+  const showError = useCallback((message: string, error?: unknown) => {
+    console.error(message, error);
+    Alert.alert('Something went wrong', message);
+  }, []);
 
   // List state
   const [listId, setListId] = useState<string | null>(null);
@@ -172,15 +181,19 @@ export default function ListDetailScreen() {
         showUndoToast({
           message: 'Item deleted',
           onUndo: async () => {
-            markWritePending();
-            await undeleteItem(listId, item.id);
+            try {
+              markWritePending();
+              await undeleteItem(listId, item.id);
+            } catch (error) {
+              showError('Unable to undo delete. Please try again.', error);
+            }
           },
         });
       } catch {
-        // Silent error handling
+        showError('Unable to delete item. Please try again.');
       }
     },
-    [listId, markWritePending, showUndoToast]
+    [listId, markWritePending, showUndoToast, showError]
   );
 
   // Handle clear checked
@@ -200,14 +213,18 @@ export default function ListDetailScreen() {
       showUndoToast({
         message: `${checkedItems.length} item${checkedItems.length > 1 ? 's' : ''} cleared`,
         onUndo: async () => {
-          markWritePending();
-          await bulkUndelete(listId, itemIds);
+          try {
+            markWritePending();
+            await bulkUndelete(listId, itemIds);
+          } catch (error) {
+            showError('Unable to undo clear. Please try again.', error);
+          }
         },
       });
     } catch {
-      // Silent error handling
+      showError('Unable to clear checked items. Please try again.');
     }
-  }, [listId, items, markWritePending, showUndoToast]);
+  }, [listId, items, markWritePending, showUndoToast, showError]);
 
   // Separate items into unchecked and checked
   const uncheckedItems = items.filter((item) => !item.checked);

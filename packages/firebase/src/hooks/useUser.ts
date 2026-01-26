@@ -94,6 +94,8 @@ export function useUser(
           await setDoc(userRef, newUser);
         }
 
+        if (!mounted) return;
+
         // Set up realtime listener
         unsubscribe = onSnapshot(
           userRef,
