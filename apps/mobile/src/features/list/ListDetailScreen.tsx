@@ -86,7 +86,11 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
     () => [
       {
         label: `Clear checked${checkedCount > 0 ? ` (${checkedCount})` : ''}`,
-        onPress: () => setShowClearDialog(true),
+        onPress: () => {
+          if (checkedCount > 0) {
+            setShowClearDialog(true);
+          }
+        },
         destructive: true,
       },
     ],

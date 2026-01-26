@@ -37,8 +37,8 @@ export function AddItemInput({ listId, userId, onWritePending }: AddItemInputPro
       // addItem uses a transaction to atomically check limit and add item
       await addItem(listId, text, userId);
     } catch (err) {
-      // Restore input on error
-      setInputValue(text);
+      // Restore input on error only if user hasn't typed something new
+      setInputValue((current) => (current === '' ? text : current));
 
       // Check for specific list full error
       const message = err instanceof Error ? err.message : '';
