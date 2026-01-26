@@ -38,6 +38,8 @@ export function useMembership(
       return;
     }
 
+    setState({ membership: null, isLoading: true, error: null });
+
     const db = getFirestoreDb();
     const membershipRef = doc(db, 'lists', listId, 'memberships', userId);
 

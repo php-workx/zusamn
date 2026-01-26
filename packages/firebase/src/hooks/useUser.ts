@@ -67,6 +67,7 @@ export function useUser(
       try {
         // Check if user document exists
         const userSnap = await getDoc(userRef);
+        if (!mounted) return;
 
         if (!userSnap.exists()) {
           // Create user document if it doesn't exist
@@ -81,9 +82,13 @@ export function useUser(
           };
 
           await setDoc(userRef, newUser, { merge: true });
+          if (!mounted) return;
         }
 
+        if (!mounted) return;
+
         // Set up realtime listener
+        if (!mounted) return;
         unsubscribe = onSnapshot(
           userRef,
           (snapshot) => {

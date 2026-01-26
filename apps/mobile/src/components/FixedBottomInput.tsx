@@ -9,6 +9,8 @@ export interface FixedBottomInputProps {
   onChangeText: (text: string) => void;
   /** Called when submit button pressed or keyboard done */
   onSubmit: () => void;
+  /** Keyboard vertical offset for different screen contexts */
+  keyboardVerticalOffset?: number;
   /** Placeholder text for input */
   placeholder?: string;
   /** Maximum character length (default: 100) */
@@ -28,6 +30,7 @@ export function FixedBottomInput({
   value,
   onChangeText,
   onSubmit,
+  keyboardVerticalOffset = 0,
   placeholder = 'Add item...',
   maxLength = 100,
   disabled = false,
@@ -44,7 +47,7 @@ export function FixedBottomInput({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      keyboardVerticalOffset={keyboardVerticalOffset}
       style={styles.container}
     >
       <YStack

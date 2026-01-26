@@ -57,12 +57,12 @@ beforeEach(async () => {
 // ============================================
 describe('listService', () => {
   describe('createPersonalList', () => {
-    it('creates list with German alias for de locale', async () => {
+    it.skip('creates list with German alias for de locale', async () => {
+      // TODO: mock initFirebase to use testEnv.firestore() and call createPersonalList
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
         const userId = 'test-user';
 
-        // Create user first
         await setDoc(doc(db, 'users', userId), {
           displayName: 'Test User',
           email: 'test@example.com',
@@ -71,9 +71,7 @@ describe('listService', () => {
         });
       });
 
-      // Note: Can't directly test createPersonalList without mocking initFirebase
-      // This is a placeholder showing the test structure
-      expect(true).toBe(true);
+      await createPersonalList('test-user', 'de');
     });
   });
 

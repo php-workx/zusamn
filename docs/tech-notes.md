@@ -360,3 +360,8 @@ Create composite indexes for expected item queries:
 - Don’t enforce 200-item limit in Security Rules in MVP1 (counting is costly/impractical).
 - Don’t debug deep links in Expo Go — use Development Builds.
 - Don’t expand web beyond invite acceptance.
+
+---
+
+## 15) Migration Plan (Short-Term)
+- Replace `react-test-renderer` usage in `packages/ui` tests with React Testing Library APIs (deprecated in React 19).

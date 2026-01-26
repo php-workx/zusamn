@@ -23,12 +23,16 @@ export default function ListsScreen() {
 
   // Error state
   if (error) {
+    console.error('Failed to load personal list', error);
+    const errorMessage = __DEV__
+      ? error.message
+      : 'Something went wrong. Please try again.';
     return (
       <Screen safeArea={false}>
         <TopBar title="Error" />
         <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
           <Text color="$danger" textAlign="center">
-            {error.message}
+            {errorMessage}
           </Text>
         </YStack>
       </Screen>

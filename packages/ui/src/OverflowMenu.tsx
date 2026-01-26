@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Text, XStack, YStack } from 'tamagui';
+import { Portal, Text, XStack, YStack } from 'tamagui';
 
 export interface OverflowMenuItem {
   /** Menu item label */
@@ -36,7 +36,7 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
         minHeight={44}
         alignItems="center"
         justifyContent="center"
-        onPress={() => setIsOpen(!isOpen)}
+        onPress={() => setIsOpen((prev) => !prev)}
         pressStyle={{ opacity: 0.6 }}
         accessible
         accessibilityRole="button"
@@ -53,16 +53,11 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
         </Text>
       </XStack>
 
-      {/* Menu popover */}
       {isOpen && (
-        <>
+        <Portal>
           {/* Backdrop to close menu */}
           <YStack
-            position="absolute"
-            top={-1000}
-            left={-1000}
-            right={-1000}
-            bottom={-1000}
+            fullscreen
             zIndex={1000}
             onPress={() => setIsOpen(false)}
           />
@@ -111,7 +106,7 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
               </XStack>
             ))}
           </YStack>
-        </>
+        </Portal>
       )}
     </YStack>
   );

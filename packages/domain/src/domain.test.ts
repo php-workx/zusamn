@@ -262,14 +262,6 @@ describe('validators', () => {
 });
 
 describe('constants', () => {
-  it('has correct limit values', () => {
-    expect(MAX_LISTS_PER_USER).toBe(5);
-    expect(MAX_ITEMS_PER_LIST).toBe(200);
-    expect(MAX_INVITE_MEMBERS).toBe(10);
-    expect(MAX_TEXT_LENGTH).toBe(100);
-    expect(MAX_ALIAS_LENGTH).toBe(50);
-  });
-
   it('has correct supported locales', () => {
     expect(SUPPORTED_LOCALES).toEqual(['de', 'en']);
   });

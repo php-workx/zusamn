@@ -9,6 +9,7 @@ export interface AddItemInputProps {
   listId: string;
   userId: string;
   onWritePending: () => void;
+  onWriteFailure?: () => void;
 }
 
 /**
@@ -18,7 +19,12 @@ export interface AddItemInputProps {
  * - Ignores whitespace-only submissions
  * - Keeps keyboard open after submit
  */
-export function AddItemInput({ listId, userId, onWritePending }: AddItemInputProps) {
+export function AddItemInput({
+  listId,
+  userId,
+  onWritePending,
+  onWriteFailure,
+}: AddItemInputProps) {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null) as React.RefObject<TextInput>;
@@ -37,6 +43,7 @@ export function AddItemInput({ listId, userId, onWritePending }: AddItemInputPro
       // addItem uses a transaction to atomically check limit and add item
       await addItem(listId, text, userId);
     } catch (err) {
+      onWriteFailure?.();
       // Restore input on error only if user hasn't typed something new
       setInputValue((current) => (current === '' ? text : current));
 
@@ -48,7 +55,7 @@ export function AddItemInput({ listId, userId, onWritePending }: AddItemInputPro
         setError('Failed to add item. Please try again.');
       }
     }
-  }, [inputValue, listId, userId, onWritePending]);
+  }, [inputValue, listId, userId, onWritePending, onWriteFailure]);
 
   // Stable callback (rerender-functional-setstate)
   const handleChangeText = useCallback((text: string) => {

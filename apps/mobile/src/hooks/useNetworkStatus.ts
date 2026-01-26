@@ -31,8 +31,11 @@ export function useNetworkStatus(): NetworkStatus {
   });
 
   useEffect(() => {
+    let active = true;
+
     // Subscribe to network state changes
     const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+      if (!active) return;
       setStatus({
         // Treat null as disconnected for safety
         isConnected: state.isConnected ?? false,
@@ -41,14 +44,21 @@ export function useNetworkStatus(): NetworkStatus {
     });
 
     // Fetch initial network state
-    NetInfo.fetch().then((state: NetInfoState) => {
-      setStatus({
-        isConnected: state.isConnected ?? false,
-        isInternetReachable: state.isInternetReachable,
+    NetInfo.fetch()
+      .then((state: NetInfoState) => {
+        if (!active) return;
+        setStatus({
+          isConnected: state.isConnected ?? false,
+          isInternetReachable: state.isInternetReachable,
+        });
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error('Failed to fetch network status', error);
       });
-    });
 
     return () => {
+      active = false;
       unsubscribe();
     };
   }, []);
