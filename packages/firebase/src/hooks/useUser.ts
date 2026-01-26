@@ -85,6 +85,8 @@ export function useUser(
           if (!mounted) return;
         }
 
+        if (!mounted) return;
+
         // Set up realtime listener
         if (!mounted) return;
         unsubscribe = onSnapshot(
