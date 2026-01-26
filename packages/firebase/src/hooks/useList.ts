@@ -51,11 +51,21 @@ export function useList(listId: string | null | undefined): UseListReturn {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
+          const rawItemCount = data.itemCount;
+          const itemCount =
+            typeof rawItemCount === 'number'
+              ? rawItemCount
+              : typeof rawItemCount === 'string'
+                ? Number(rawItemCount)
+                : undefined;
           const list: List = {
             id: snapshot.id,
             ownerUserId: data.ownerUserId ?? '',
             memberIds: data.memberIds ?? [],
             createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
+            itemCount: Number.isFinite(itemCount ?? Number.NaN)
+              ? itemCount
+              : undefined,
           };
           setState({ list, isLoading: false, error: null });
         } else {

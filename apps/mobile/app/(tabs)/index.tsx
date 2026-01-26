@@ -48,7 +48,8 @@ export default function ListDetailScreen() {
   const { showUndoToast } = useToast();
   const { isConnected } = useNetworkStatus();
   const { hasPendingWrites, markWritePending } = useSyncStatus();
-  const { getLastUsedListId, setLastUsedListId } = useLastUsedList();
+  const { getLastUsedListId, setLastUsedListId, clearLastUsedListId } =
+    useLastUsedList();
   const showError = useCallback((message: string, error?: unknown) => {
     console.error(message, error);
     Alert.alert('Something went wrong', message);
@@ -79,8 +80,28 @@ export default function ListDetailScreen() {
   const { membership } = useMembership(listId, user?.uid);
   const { items, isLoading: isItemsLoading } = useItems(listId);
 
+  const ensurePersonalList = useCallback(async () => {
+    if (!user?.uid || !firestoreUser) return;
+
+    const existingList = await getPersonalList(user.uid);
+    if (existingList) {
+      setListId(existingList.list.id);
+      setLastUsedListId(existingList.list.id);
+      return;
+    }
+
+    const { list: newList } = await createPersonalList(
+      user.uid,
+      firestoreUser.locale
+    );
+    setListId(newList.id);
+    setLastUsedListId(newList.id);
+  }, [user?.uid, firestoreUser, setLastUsedListId]);
+
   // Initialize personal list on mount
   useEffect(() => {
+    let active = true;
+
     async function initializeList() {
       if (!user?.uid || !firestoreUser) return;
 
@@ -88,29 +109,19 @@ export default function ListDetailScreen() {
         // Check for last used list first
         const lastListId = getLastUsedListId();
         if (lastListId) {
-          setListId(lastListId);
-          setIsInitializing(false);
+          if (active) {
+            setListId(lastListId);
+            setIsInitializing(false);
+          }
           return;
         }
 
-        // Check for existing personal list
-        const existingList = await getPersonalList(user.uid);
-        if (existingList) {
-          setListId(existingList.list.id);
-          setLastUsedListId(existingList.list.id);
+        await ensurePersonalList();
+        if (active) {
           setIsInitializing(false);
-          return;
         }
-
-        // Create personal list for first-time users
-        const { list: newList } = await createPersonalList(
-          user.uid,
-          firestoreUser.locale
-        );
-        setListId(newList.id);
-        setLastUsedListId(newList.id);
-        setIsInitializing(false);
       } catch (error) {
+        if (!active) return;
         setInitError(
           error instanceof Error ? error : new Error('Failed to initialize list')
         );
@@ -119,7 +130,44 @@ export default function ListDetailScreen() {
     }
 
     initializeList();
-  }, [user?.uid, firestoreUser, getLastUsedListId, setLastUsedListId]);
+
+    return () => {
+      active = false;
+    };
+  }, [user?.uid, firestoreUser, getLastUsedListId, ensurePersonalList]);
+
+  // Validate cached list ID and recover if it is no longer valid
+  useEffect(() => {
+    if (isInitializing || isListLoading) return;
+    if (!listId || list) return;
+
+    let active = true;
+
+    const recoverList = async () => {
+      try {
+        clearLastUsedListId();
+        await ensurePersonalList();
+      } catch (error) {
+        if (!active) return;
+        setInitError(
+          error instanceof Error ? error : new Error('Failed to recover list')
+        );
+      }
+    };
+
+    recoverList();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    listId,
+    list,
+    isInitializing,
+    isListLoading,
+    clearLastUsedListId,
+    ensurePersonalList,
+  ]);
 
   // Determine status subtitle
   const getStatusSubtitle = useCallback((): string | undefined => {
@@ -135,7 +183,10 @@ export default function ListDetailScreen() {
     if (!text || !listId || !user?.uid) return;
 
     // Check item limit
-    const count = await getItemCount(listId);
+    const count =
+      typeof list?.itemCount === 'number'
+        ? list.itemCount
+        : await getItemCount(listId);
     if (count >= MAX_ITEMS_PER_LIST) {
       // Could show a toast here, for now just return
       return;
@@ -150,7 +201,7 @@ export default function ListDetailScreen() {
       // Restore input on error
       setInputValue(text);
     }
-  }, [inputValue, listId, user?.uid, markWritePending]);
+  }, [inputValue, listId, user?.uid, markWritePending, list?.itemCount]);
 
   // Handle check/uncheck
   const handleToggleChecked = useCallback(

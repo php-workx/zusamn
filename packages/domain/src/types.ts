@@ -15,6 +15,7 @@ export interface List {
   ownerUserId: string;
   memberIds: string[];
   createdAt: number;
+  itemCount?: number;
 }
 
 export interface Membership {

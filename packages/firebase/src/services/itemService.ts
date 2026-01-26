@@ -1,14 +1,11 @@
 import {
   doc,
-  setDoc,
-  updateDoc,
   serverTimestamp,
-  getDoc,
   getDocs,
   collection,
   query,
   where,
-  writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
 import type { Item } from '@zusamn/domain';
@@ -27,6 +24,14 @@ function getDb() {
 function getItemRef(listId: string, itemId: string) {
   const db = getDb();
   return doc(db, 'lists', listId, 'items', itemId);
+}
+
+/**
+ * Gets a reference to a list document.
+ */
+function getListRef(listId: string) {
+  const db = getDb();
+  return doc(db, 'lists', listId);
 }
 
 /**
@@ -68,14 +73,6 @@ export async function addItem(
     throw new Error(validation.error);
   }
 
-  // Check item count limit
-  const currentCount = await getItemCount(listId);
-  if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
-    throw new Error(
-      `Cannot add item: list has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
-    );
-  }
-
   // Generate UUIDv4 for the item
   const itemId = crypto.randomUUID();
 
@@ -90,9 +87,29 @@ export async function addItem(
     serverUpdatedAt: serverTimestamp(),
   };
 
-  // Create the item document
+  const db = getDb();
+  const listRef = getListRef(listId);
   const itemRef = getItemRef(listId, itemId);
-  await setDoc(itemRef, itemData);
+
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount =
+      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+
+    if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
+      throw new Error(
+        `Cannot add item: list has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
+      );
+    }
+
+    transaction.set(itemRef, itemData);
+    transaction.update(listRef, { itemCount: currentCount + 1 });
+  });
 
   // Return the item object
   // Note: serverTimestamp() resolves on the server, so we use Date.now() as placeholder
@@ -125,19 +142,20 @@ export async function toggleItemChecked(
 ): Promise<void> {
   const itemRef = getItemRef(listId, itemId);
 
-  // Get current item state
-  const itemSnapshot = await getDoc(itemRef);
-  if (!itemSnapshot.exists()) {
-    throw new Error(`Item not found: ${itemId}`);
-  }
+  const db = getDb();
+  await runTransaction(db, async (transaction) => {
+    const itemSnapshot = await transaction.get(itemRef);
+    if (!itemSnapshot.exists()) {
+      throw new Error(`Item not found: ${itemId}`);
+    }
 
-  const currentData = itemSnapshot.data();
-  const newCheckedState = !currentData.checked;
+    const currentData = itemSnapshot.data();
+    const newCheckedState = !currentData.checked;
 
-  // Update the item
-  await updateDoc(itemRef, {
-    checked: newCheckedState,
-    serverUpdatedAt: serverTimestamp(),
+    transaction.update(itemRef, {
+      checked: newCheckedState,
+      serverUpdatedAt: serverTimestamp(),
+    });
   });
 }
 
@@ -152,11 +170,39 @@ export async function softDeleteItem(
   listId: string,
   itemId: string
 ): Promise<void> {
+  const db = getDb();
+  const listRef = getListRef(listId);
   const itemRef = getItemRef(listId, itemId);
 
-  await updateDoc(itemRef, {
-    deleted: true,
-    serverUpdatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const [listSnapshot, itemSnapshot] = await Promise.all([
+      transaction.get(listRef),
+      transaction.get(itemRef),
+    ]);
+
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+    if (!itemSnapshot.exists()) {
+      throw new Error(`Item not found: ${itemId}`);
+    }
+
+    const itemData = itemSnapshot.data();
+    if (itemData.deleted === true) {
+      throw new Error(`Item already deleted: ${itemId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount =
+      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+
+    transaction.update(itemRef, {
+      deleted: true,
+      serverUpdatedAt: serverTimestamp(),
+    });
+    transaction.update(listRef, {
+      itemCount: Math.max(0, currentCount - 1),
+    });
   });
 }
 
@@ -171,11 +217,43 @@ export async function undeleteItem(
   listId: string,
   itemId: string
 ): Promise<void> {
+  const db = getDb();
+  const listRef = getListRef(listId);
   const itemRef = getItemRef(listId, itemId);
 
-  await updateDoc(itemRef, {
-    deleted: false,
-    serverUpdatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const [listSnapshot, itemSnapshot] = await Promise.all([
+      transaction.get(listRef),
+      transaction.get(itemRef),
+    ]);
+
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+    if (!itemSnapshot.exists()) {
+      throw new Error(`Item not found: ${itemId}`);
+    }
+
+    const itemData = itemSnapshot.data();
+    if (itemData.deleted !== true) {
+      throw new Error(`Item is not deleted: ${itemId}`);
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount =
+      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+
+    if (currentCount + 1 > LIMITS.ITEMS_PER_LIST_MAX) {
+      throw new Error(
+        `Cannot restore item: list has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
+      );
+    }
+
+    transaction.update(itemRef, {
+      deleted: false,
+      serverUpdatedAt: serverTimestamp(),
+    });
+    transaction.update(listRef, { itemCount: currentCount + 1 });
   });
 }
 
@@ -195,17 +273,49 @@ export async function bulkSoftDelete(
   }
 
   const db = getDb();
-  const batch = writeBatch(db);
+  const listRef = getListRef(listId);
 
-  for (const itemId of itemIds) {
-    const itemRef = getItemRef(listId, itemId);
-    batch.update(itemRef, {
-      deleted: true,
-      serverUpdatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
+
+    const itemSnapshots = await Promise.all(
+      itemIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
+    );
+
+    let actualDeletedCount = 0;
+    for (const [index, snapshot] of itemSnapshots.entries()) {
+      const itemId = itemIds[index];
+      if (!itemId) {
+        continue;
+      }
+
+      if (!snapshot.exists()) {
+        continue;
+      }
+
+      const data = snapshot.data();
+      if (data.deleted === true) {
+        continue;
+      }
+
+      actualDeletedCount += 1;
+      transaction.update(getItemRef(listId, itemId), {
+        deleted: true,
+        serverUpdatedAt: serverTimestamp(),
+      });
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount =
+      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+
+    transaction.update(listRef, {
+      itemCount: Math.max(0, currentCount - actualDeletedCount),
     });
-  }
-
-  await batch.commit();
+  });
 }
 
 /**
@@ -224,15 +334,51 @@ export async function bulkUndelete(
   }
 
   const db = getDb();
-  const batch = writeBatch(db);
+  const listRef = getListRef(listId);
 
-  for (const itemId of itemIds) {
-    const itemRef = getItemRef(listId, itemId);
-    batch.update(itemRef, {
-      deleted: false,
-      serverUpdatedAt: serverTimestamp(),
-    });
-  }
+  await runTransaction(db, async (transaction) => {
+    const listSnapshot = await transaction.get(listRef);
+    if (!listSnapshot.exists()) {
+      throw new Error(`List not found: ${listId}`);
+    }
 
-  await batch.commit();
+    const itemSnapshots = await Promise.all(
+      itemIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
+    );
+
+    let restoredCount = 0;
+    for (const [index, snapshot] of itemSnapshots.entries()) {
+      const itemId = itemIds[index];
+      if (!itemId) {
+        continue;
+      }
+
+      if (!snapshot.exists()) {
+        continue;
+      }
+
+      const data = snapshot.data();
+      if (data.deleted !== true) {
+        continue;
+      }
+
+      restoredCount += 1;
+      transaction.update(getItemRef(listId, itemId), {
+        deleted: false,
+        serverUpdatedAt: serverTimestamp(),
+      });
+    }
+
+    const listData = listSnapshot.data();
+    const currentCount =
+      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+
+    if (currentCount + restoredCount > LIMITS.ITEMS_PER_LIST_MAX) {
+      throw new Error(
+        `Cannot restore items: list has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
+      );
+    }
+
+    transaction.update(listRef, { itemCount: currentCount + restoredCount });
+  });
 }

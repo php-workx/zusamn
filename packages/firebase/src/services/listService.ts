@@ -54,6 +54,7 @@ export async function createPersonalList(
     ownerUserId: userId,
     memberIds: [userId],
     createdAt: now,
+    itemCount: 0,
   };
 
   const membership: Membership = {
@@ -71,6 +72,7 @@ export async function createPersonalList(
     ownerUserId: list.ownerUserId,
     memberIds: list.memberIds,
     createdAt: list.createdAt,
+    itemCount: list.itemCount,
   });
 
   // Create membership subcollection document
@@ -113,6 +115,8 @@ export async function getUserLists(
       ownerUserId: listData.ownerUserId,
       memberIds: listData.memberIds,
       createdAt: listData.createdAt,
+      itemCount:
+        typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
     };
 
     // Get user's membership document
@@ -177,6 +181,8 @@ export async function getPersonalList(
     ownerUserId: listData.ownerUserId,
     memberIds: listData.memberIds,
     createdAt: listData.createdAt,
+    itemCount:
+      typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
   };
 
   // Get the user's membership
