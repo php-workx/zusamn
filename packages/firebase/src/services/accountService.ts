@@ -60,8 +60,11 @@ export async function deleteAccount(userId: string): Promise<void> {
   if (!currentUser) {
     throw new Error('No authenticated user.');
   }
+  if (currentUser.uid !== userId) {
+    throw new Error('Authenticated user does not match requested account.');
+  }
 
-  await deleteAccountWithDb(db, userId);
+  await deleteAccountWithDb(db, currentUser.uid);
   try {
     await deleteUser(currentUser);
   } catch (error) {

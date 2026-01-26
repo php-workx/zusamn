@@ -56,7 +56,13 @@ async function ensureItemCount(
   const itemsSnapshot = await getDocs(itemsQuery);
   const count = itemsSnapshot.size;
 
-  await updateDoc(doc(db, listDoc.ref.path), { itemCount: count });
+  try {
+    await updateDoc(doc(db, listDoc.ref.path), { itemCount: count });
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Failed to backfill list itemCount', error);
+    }
+  }
 
   return count;
 }
