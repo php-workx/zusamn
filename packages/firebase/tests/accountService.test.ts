@@ -14,6 +14,7 @@ import {
   getDocs,
   setDoc,
   Timestamp,
+  type Firestore,
 } from 'firebase/firestore';
 import { deleteAccountWithDb } from '../src/services/accountService';
 
@@ -103,7 +104,10 @@ describe('deleteAccountWithDb', () => {
     });
 
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      await deleteAccountWithDb(context.firestore(), userId);
+      await deleteAccountWithDb(
+        context.firestore() as unknown as Firestore,
+        userId
+      );
     });
 
     await testEnv.withSecurityRulesDisabled(async (context) => {
