@@ -181,6 +181,9 @@ importers:
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      react-native:
+        specifier: 0.81.5
+        version: 0.81.5(@babel/core@7.28.6)(@react-native-community/cli@13.6.9(encoding@0.1.13))(@types/react@19.2.9)(react@19.1.0)
       tamagui:
         specifier: ^1.114.0
         version: 1.144.3(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.6)(@react-native-community/cli@13.6.9(encoding@0.1.13))(@types/react@19.2.9)(react@19.1.0))(react@19.1.0)

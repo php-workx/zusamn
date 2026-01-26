@@ -39,6 +39,7 @@ export default function AccountScreen() {
       return;
     }
 
+    setConfirmVisible(false);
     setIsDeleting(true);
     setDeleteError(null);
     try {
