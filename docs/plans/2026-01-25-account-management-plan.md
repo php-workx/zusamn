@@ -10,12 +10,12 @@
 
 ---
 
-### Task 1: Add Account Screen UI Tests (render + buttons)
+## Task 1: Add Account Screen UI Tests (render + buttons)
 
 **Files:**
 - Create/Modify: `apps/mobile/src/__tests__/account-screen.test.tsx`
 
-**Step 1: Write failing test**
+### Step 1: Write failing test
 
 ```tsx
 it('renders display name and action buttons', () => {
@@ -24,21 +24,21 @@ it('renders display name and action buttons', () => {
 });
 ```
 
-**Step 2: Run test to verify it fails**
+### Step 2: Run test to verify it fails
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: FAIL (Account screen missing required UI).
 
-**Step 3: Write minimal implementation**
+### Step 3: Write minimal implementation
 
 Implementation will come in Task 2.
 
-**Step 4: Run test to verify it passes**
+### Step 4: Run test to verify it passes
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: PASS.
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add apps/mobile/src/__tests__/account-screen.test.tsx
@@ -48,32 +48,32 @@ git commit -m "test: add account screen render tests"
 
 ---
 
-### Task 2: Implement Account Screen Layout (display name + buttons)
+## Task 2: Implement Account Screen Layout (display name + buttons)
 
 **Files:**
 - Modify: `apps/mobile/app/(tabs)/account.tsx`
 
-**Step 1: Write failing test**
+### Step 1: Write failing test
 
 Reuse Task 1 test (should already fail).
 
-**Step 2: Run test to verify it fails**
+### Step 2: Run test to verify it fails
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: FAIL until UI is updated.
 
-**Step 3: Write minimal implementation**
+### Step 3: Write minimal implementation
 
 - Use Tamagui components from `@zusamn/ui`.
 - Show display name from `useAuthContext()`.
 - Render Logout + Delete Account buttons.
 
-**Step 4: Run test to verify it passes**
+### Step 4: Run test to verify it passes
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: PASS.
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add apps/mobile/app/(tabs)/account.tsx
@@ -83,13 +83,13 @@ git add apps/mobile/app/(tabs)/account.tsx
 
 ---
 
-### Task 3: Logout Flow (T111)
+## Task 3: Logout Flow (T111)
 
 **Files:**
 - Modify: `apps/mobile/src/__tests__/account-screen.test.tsx`
 - Modify: `apps/mobile/app/(tabs)/account.tsx`
 
-**Step 1: Write failing test**
+### Step 1: Write failing test
 
 ```tsx
 it('calls signOut when Logout is pressed', async () => {
@@ -99,21 +99,21 @@ it('calls signOut when Logout is pressed', async () => {
 });
 ```
 
-**Step 2: Run test to verify it fails**
+### Step 2: Run test to verify it fails
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: FAIL (no handler).
 
-**Step 3: Write minimal implementation**
+### Step 3: Write minimal implementation
 
 - Wire Logout button to `signOut()` from `useAuthContext()`.
 
-**Step 4: Run test to verify it passes**
+### Step 4: Run test to verify it passes
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: PASS.
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add apps/mobile/app/(tabs)/account.tsx apps/mobile/src/__tests__/account-screen.test.tsx
@@ -122,14 +122,14 @@ git commit -m "feat: add logout action on account screen"
 
 ---
 
-### Task 4: Delete Account Service (T112)
+## Task 4: Delete Account Service (T112)
 
 **Files:**
 - Create: `packages/firebase/src/services/accountService.ts`
 - Modify: `packages/firebase/src/index.ts`
 - Create/Modify: `packages/firebase/tests/accountService.test.ts`
 
-**Step 1: Write failing test**
+### Step 1: Write failing test
 
 ```ts
 it('deletes memberships, removes memberIds, soft-deletes personal list, deletes user doc, and signs out', async () => {
@@ -142,12 +142,12 @@ it('deletes memberships, removes memberIds, soft-deletes personal list, deletes 
 });
 ```
 
-**Step 2: Run test to verify it fails**
+### Step 2: Run test to verify it fails
 
 Run: `pnpm --filter @zusamn/firebase test -- accountService.test.ts`
 Expected: FAIL (service missing).
 
-**Step 3: Write minimal implementation**
+### Step 3: Write minimal implementation
 
 - Use Firestore `collectionGroup('memberships')` query by `userId`.
 - Batch deletes for membership docs.
@@ -155,12 +155,12 @@ Expected: FAIL (service missing).
 - Soft-delete the personal list (set `deleted: true`, matching list model).
 - Delete `users/{userId}` and sign out.
 
-**Step 4: Run test to verify it passes**
+### Step 4: Run test to verify it passes
 
 Run: `pnpm --filter @zusamn/firebase test -- accountService.test.ts`
 Expected: PASS.
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add packages/firebase/src/services/accountService.ts packages/firebase/src/index.ts packages/firebase/tests/accountService.test.ts
@@ -169,34 +169,34 @@ git commit -m "feat: add delete account service"
 
 ---
 
-### Task 5: Firestore Rules for Membership Deletion + Query
+## Task 5: Firestore Rules for Membership Deletion + Query
 
 **Files:**
 - Modify: `firebase/firestore.rules`
 - Modify: `packages/firebase/tests/rules.test.ts`
 
-**Step 1: Write failing test**
+### Step 1: Write failing test
 
 Add tests for:
 - user can read their membership docs via collection group query
 - user can delete their own membership
 
-**Step 2: Run test to verify it fails**
+### Step 2: Run test to verify it fails
 
 Run: `pnpm --filter @zusamn/firebase test -- rules.test.ts`
 Expected: FAIL until rules are updated.
 
-**Step 3: Write minimal implementation**
+### Step 3: Write minimal implementation
 
 - Add collection group match for memberships with userId constraints.
 - Allow delete for the authenticated user on their membership doc.
 
-**Step 4: Run test to verify it passes**
+### Step 4: Run test to verify it passes
 
 Run: `pnpm --filter @zusamn/firebase test -- rules.test.ts`
 Expected: PASS.
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add firebase/firestore.rules packages/firebase/tests/rules.test.ts
@@ -205,14 +205,14 @@ git commit -m "feat: allow membership query/delete for account removal"
 
 ---
 
-### Task 6: Delete Account UI Flow (T113–T116)
+## Task 6: Delete Account UI Flow (T113–T116)
 
 **Files:**
 - Modify: `apps/mobile/src/__tests__/account-screen.test.tsx`
 - Modify: `apps/mobile/app/(tabs)/account.tsx`
 - Add dependency if needed: `@react-native-community/netinfo`
 
-**Step 1: Write failing tests**
+### Step 1: Write failing tests
 
 ```tsx
 it('blocks delete account when offline', async () => {
@@ -227,24 +227,24 @@ it('confirms and calls deleteAccount when online', async () => {
 });
 ```
 
-**Step 2: Run test to verify it fails**
+### Step 2: Run test to verify it fails
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: FAIL.
 
-**Step 3: Write minimal implementation**
+### Step 3: Write minimal implementation
 
 - Use NetInfo to guard deletion.
 - Show ConfirmDialog with warning text.
 - Call `deleteAccount` from `@zusamn/firebase`.
 - Disable Delete button while processing.
 
-**Step 4: Run test to verify it passes**
+### Step 4: Run test to verify it passes
 
 Run: `pnpm --filter @zusamn/mobile test -- account-screen.test.tsx`
 Expected: PASS.
 
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add apps/mobile/app/(tabs)/account.tsx apps/mobile/src/__tests__/account-screen.test.tsx
@@ -261,4 +261,3 @@ Run:
 - `pnpm test`
 
 Expected: All pass.
-
