@@ -7,6 +7,7 @@ import {
   where,
   writeBatch,
   Timestamp,
+  updateDoc,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
 import type { List, Membership, Locale } from '@zusamn/domain';
@@ -34,6 +35,31 @@ function getDb() {
   return initFirebase().db;
 }
 
+function toMillis(value: unknown): number {
+  return value && typeof value === 'object' && 'toMillis' in value
+    ? (value as { toMillis: () => number }).toMillis()
+    : ((value as number | undefined | null) ?? Date.now());
+}
+
+async function ensureItemCount(
+  db: ReturnType<typeof getDb>,
+  listDoc: { id: string; data: () => { itemCount?: number }; ref: { path: string } }
+): Promise<number> {
+  const listData = listDoc.data();
+  if (typeof listData.itemCount === 'number') {
+    return listData.itemCount;
+  }
+
+  const itemsRef = collection(db, 'lists', listDoc.id, 'items');
+  const itemsQuery = query(itemsRef, where('deleted', '==', false));
+  const itemsSnapshot = await getDocs(itemsQuery);
+  const count = itemsSnapshot.size;
+
+  await updateDoc(doc(db, listDoc.ref.path), { itemCount: count });
+
+  return count;
+}
+
 /**
  * Creates a personal list for a user with a locale-aware default alias.
  * Uses a batch write for atomic operation.
@@ -52,6 +78,7 @@ export async function createPersonalList(
     ownerUserId: userId,
     memberIds: [userId],
     createdAt: now,
+    itemCount: 0,
   };
 
   const membership: Membership = {
@@ -69,6 +96,7 @@ export async function createPersonalList(
     ownerUserId: list.ownerUserId,
     memberIds: list.memberIds,
     createdAt: list.createdAt,
+    itemCount: list.itemCount,
   });
 
   // Create membership subcollection document
@@ -105,11 +133,13 @@ export async function getUserLists(
   const resolved = await Promise.all(
     listsSnapshot.docs.map(async (listDoc) => {
       const listData = listDoc.data();
+      const itemCount = await ensureItemCount(db, listDoc);
       const list: List = {
         id: listDoc.id,
         ownerUserId: listData.ownerUserId,
         memberIds: listData.memberIds,
-        createdAt: listData.createdAt,
+        createdAt: toMillis(listData.createdAt),
+        itemCount,
       };
 
       const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
@@ -121,7 +151,7 @@ export async function getUserLists(
         userId: membershipData.userId,
         listId: membershipData.listId,
         alias: membershipData.alias,
-        joinedAt: membershipData.joinedAt,
+        joinedAt: toMillis(membershipData.joinedAt),
       };
 
       return { list, membership };
@@ -172,11 +202,13 @@ export async function getPersonalList(
     return null;
   }
   const listData = listDoc.data();
+  const itemCount = await ensureItemCount(db, listDoc);
   const list: List = {
     id: listDoc.id,
     ownerUserId: listData.ownerUserId,
     memberIds: listData.memberIds,
-    createdAt: listData.createdAt,
+    createdAt: toMillis(listData.createdAt),
+    itemCount,
   };
 
   // Get the user's membership
@@ -192,7 +224,7 @@ export async function getPersonalList(
     userId: membershipData.userId,
     listId: membershipData.listId,
     alias: membershipData.alias,
-    joinedAt: membershipData.joinedAt,
+    joinedAt: toMillis(membershipData.joinedAt),
   };
 
   return { list, membership };

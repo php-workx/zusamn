@@ -96,6 +96,18 @@ describe('itemService', () => {
     );
   });
 
+  it('addItem rejects when itemCount is missing', async () => {
+    const { addItem, LIST_COUNT_MISSING_ERROR } = await loadItemService();
+    transactionGetMock.mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({}),
+    });
+
+    await expect(addItem('list-1', 'Milk', 'user-1')).rejects.toThrow(
+      `${LIST_COUNT_MISSING_ERROR}: List is missing itemCount (list-1)`
+    );
+  });
+
   it('addItem writes item and returns item with id', async () => {
     const { addItem } = await loadItemService();
     transactionGetMock.mockResolvedValueOnce({
@@ -150,10 +162,15 @@ describe('itemService', () => {
 
   it('softDeleteItem marks deleted true', async () => {
     const { softDeleteItem } = await loadItemService();
-    transactionGetMock.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ itemCount: 3 }),
-    });
+    transactionGetMock
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ itemCount: 3 }),
+      })
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ deleted: false }),
+      });
 
     await softDeleteItem('list-1', 'item-1');
 
@@ -168,10 +185,15 @@ describe('itemService', () => {
 
   it('undeleteItem marks deleted false', async () => {
     const { undeleteItem } = await loadItemService();
-    transactionGetMock.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ itemCount: 2 }),
-    });
+    transactionGetMock
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ itemCount: 2 }),
+      })
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ deleted: true }),
+      });
 
     await undeleteItem('list-1', 'item-1');
 
@@ -194,10 +216,19 @@ describe('itemService', () => {
 
   it('bulkSoftDelete updates each item and commits', async () => {
     const { bulkSoftDelete } = await loadItemService();
-    transactionGetMock.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ itemCount: 5 }),
-    });
+    transactionGetMock
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ itemCount: 5 }),
+      })
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ deleted: false }),
+      })
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ deleted: false }),
+      });
 
     await bulkSoftDelete('list-1', ['item-1', 'item-2']);
 
@@ -206,10 +237,15 @@ describe('itemService', () => {
 
   it('bulkUndelete updates each item and commits', async () => {
     const { bulkUndelete } = await loadItemService();
-    transactionGetMock.mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ itemCount: 1 }),
-    });
+    transactionGetMock
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ itemCount: 1 }),
+      })
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ deleted: true }),
+      });
 
     await bulkUndelete('list-1', ['item-1']);
 

@@ -7,7 +7,7 @@
 
 Before saying "done" or "complete", run this checklist:
 
-```
+```text
 [ ] 1. git status              (check what changed)
 [ ] 2. git add <files>         (stage code changes)
 [ ] 3. bd sync                 (commit beads changes)

@@ -29,7 +29,6 @@
 - NEVER commit directly to main
 - ALL pre-commit hooks MUST pass before committing
 - Commit work locally; push only when user requests it
-Use 'bd' for task tracking
 
 
 <!-- BEGIN BEADS INTEGRATION -->

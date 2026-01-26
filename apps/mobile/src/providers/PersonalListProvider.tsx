@@ -65,19 +65,47 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
             setIsInitializing(false);
           }
           // Background validation - verify cached list still exists
-          getPersonalList(user.uid).then((result) => {
-            if (cancelled) return;
-            // If cached list no longer exists or differs, update to current list
-            if (!result || result.list.id !== lastListId) {
-              if (result) {
-                setLastUsedListId(result.list.id);
-                setListId(result.list.id);
-              } else {
-                clearLastUsedListId();
-                setListId(null);
+          getPersonalList(user.uid)
+            .then(async (result) => {
+              if (cancelled) return;
+              // If cached list no longer exists or differs, update to current list
+              if (!result || result.list.id !== lastListId) {
+                if (result) {
+                  setLastUsedListId(result.list.id);
+                  setListId(result.list.id);
+                  return;
+                }
+
+                try {
+                  const { list } = await createPersonalList(
+                    user.uid,
+                    firestoreUser.locale
+                  );
+                  if (cancelled) return;
+                  setLastUsedListId(list.id);
+                  setListId(list.id);
+                } catch (err) {
+                  if (cancelled) return;
+                  console.error('Failed to recover personal list', err);
+                  setError(
+                    err instanceof Error
+                      ? err
+                      : new Error('Failed to initialize list')
+                  );
+                  clearLastUsedListId();
+                  setListId(null);
+                }
               }
-            }
-          });
+            })
+            .catch((err) => {
+              if (cancelled) return;
+              console.error('Failed to validate cached personal list', err);
+              setError(
+                err instanceof Error
+                  ? err
+                  : new Error('Failed to initialize list')
+              );
+            });
           return;
         }
 

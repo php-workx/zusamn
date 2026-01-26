@@ -51,6 +51,8 @@ export async function getItemCount(listId: string): Promise<number> {
 
 /** Error code for list capacity exceeded */
 export const LIST_FULL_ERROR = 'LIST_FULL';
+/** Error code for missing list item count */
+export const LIST_COUNT_MISSING_ERROR = 'LIST_COUNT_MISSING';
 
 /**
  * Adds a new item to a shopping list using a transaction for atomic limit enforcement.
@@ -87,7 +89,12 @@ export async function addItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount = listData.itemCount ?? 0;
+    if (listData.itemCount == null) {
+      throw new Error(
+        `${LIST_COUNT_MISSING_ERROR}: List is missing itemCount (${listId})`
+      );
+    }
+    const currentCount = listData.itemCount;
 
     if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(
@@ -184,16 +191,31 @@ export async function softDeleteItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount = listData.itemCount ?? 0;
+    if (listData.itemCount == null) {
+      throw new Error(
+        `${LIST_COUNT_MISSING_ERROR}: List is missing itemCount (${listId})`
+      );
+    }
+    const currentCount = listData.itemCount;
 
-    transaction.update(itemRef, {
-      deleted: true,
-      serverUpdatedAt: serverTimestamp(),
-    });
+    const itemSnapshot = await transaction.get(itemRef);
+    if (!itemSnapshot.exists()) {
+      throw new Error(`Item not found: ${itemId}`);
+    }
 
-    // Decrement the item count (min 0)
+    const itemData = itemSnapshot.data();
+    const wasDeleted = Boolean(itemData.deleted);
+
+    if (!wasDeleted) {
+      transaction.update(itemRef, {
+        deleted: true,
+        serverUpdatedAt: serverTimestamp(),
+      });
+    }
+
+    const delta = wasDeleted ? 0 : -1;
     transaction.update(listRef, {
-      itemCount: Math.max(0, currentCount - 1),
+      itemCount: Math.max(0, currentCount + delta),
     });
   });
 }
@@ -220,16 +242,31 @@ export async function undeleteItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount = listData.itemCount ?? 0;
+    if (listData.itemCount == null) {
+      throw new Error(
+        `${LIST_COUNT_MISSING_ERROR}: List is missing itemCount (${listId})`
+      );
+    }
+    const currentCount = listData.itemCount;
 
-    transaction.update(itemRef, {
-      deleted: false,
-      serverUpdatedAt: serverTimestamp(),
-    });
+    const itemSnapshot = await transaction.get(itemRef);
+    if (!itemSnapshot.exists()) {
+      throw new Error(`Item not found: ${itemId}`);
+    }
 
-    // Increment the item count
+    const itemData = itemSnapshot.data();
+    const wasDeleted = Boolean(itemData.deleted);
+
+    if (wasDeleted) {
+      transaction.update(itemRef, {
+        deleted: false,
+        serverUpdatedAt: serverTimestamp(),
+      });
+    }
+
+    const delta = wasDeleted ? 1 : 0;
     transaction.update(listRef, {
-      itemCount: currentCount + 1,
+      itemCount: Math.max(0, currentCount + delta),
     });
   });
 }
@@ -263,19 +300,33 @@ export async function bulkSoftDelete(
     }
 
     const listData = listSnapshot.data();
-    const currentCount = listData.itemCount ?? 0;
+    if (listData.itemCount == null) {
+      throw new Error(
+        `${LIST_COUNT_MISSING_ERROR}: List is missing itemCount (${listId})`
+      );
+    }
+    const currentCount = listData.itemCount;
 
+    let delta = 0;
     for (const itemId of itemIds) {
       const itemRef = getItemRef(listId, itemId);
-      transaction.update(itemRef, {
-        deleted: true,
-        serverUpdatedAt: serverTimestamp(),
-      });
+      const itemSnapshot = await transaction.get(itemRef);
+      if (!itemSnapshot.exists()) {
+        continue;
+      }
+      const itemData = itemSnapshot.data();
+      const wasDeleted = Boolean(itemData.deleted);
+      if (!wasDeleted) {
+        transaction.update(itemRef, {
+          deleted: true,
+          serverUpdatedAt: serverTimestamp(),
+        });
+        delta -= 1;
+      }
     }
 
-    // Decrement the item count by the number of deleted items
     transaction.update(listRef, {
-      itemCount: Math.max(0, currentCount - itemIds.length),
+      itemCount: Math.max(0, currentCount + delta),
     });
   });
 }
@@ -309,19 +360,33 @@ export async function bulkUndelete(
     }
 
     const listData = listSnapshot.data();
-    const currentCount = listData.itemCount ?? 0;
+    if (listData.itemCount == null) {
+      throw new Error(
+        `${LIST_COUNT_MISSING_ERROR}: List is missing itemCount (${listId})`
+      );
+    }
+    const currentCount = listData.itemCount;
 
+    let delta = 0;
     for (const itemId of itemIds) {
       const itemRef = getItemRef(listId, itemId);
-      transaction.update(itemRef, {
-        deleted: false,
-        serverUpdatedAt: serverTimestamp(),
-      });
+      const itemSnapshot = await transaction.get(itemRef);
+      if (!itemSnapshot.exists()) {
+        continue;
+      }
+      const itemData = itemSnapshot.data();
+      const wasDeleted = Boolean(itemData.deleted);
+      if (wasDeleted) {
+        transaction.update(itemRef, {
+          deleted: false,
+          serverUpdatedAt: serverTimestamp(),
+        });
+        delta += 1;
+      }
     }
 
-    // Increment the item count by the number of restored items
     transaction.update(listRef, {
-      itemCount: currentCount + itemIds.length,
+      itemCount: Math.max(0, currentCount + delta),
     });
   });
 }

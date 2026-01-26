@@ -9,6 +9,7 @@ const collectionMock = vi.fn();
 const queryMock = vi.fn();
 const whereMock = vi.fn();
 const docMock = vi.fn();
+const updateDocMock = vi.fn();
 const timestampNowMock = vi.fn();
 
 vi.mock('../src/client', () => ({
@@ -23,6 +24,7 @@ vi.mock('firebase/firestore', () => ({
   getDoc: (...args: unknown[]) => getDocMock(...args),
   writeBatch: (...args: unknown[]) => writeBatchMock(...args),
   doc: (...args: unknown[]) => docMock(...args),
+  updateDoc: (...args: unknown[]) => updateDocMock(...args),
   Timestamp: { now: () => ({ toMillis: () => timestampNowMock() }) },
 }));
 
@@ -41,6 +43,7 @@ beforeEach(() => {
   queryMock.mockReset();
   whereMock.mockReset();
   docMock.mockReset();
+  updateDocMock.mockReset();
   timestampNowMock.mockReset();
 
   writeBatchMock.mockReturnValue({
@@ -76,11 +79,23 @@ describe('listService', () => {
     const listDocs = [
       {
         id: 'list-personal',
-        data: () => ({ ownerUserId: 'user-1', memberIds: ['user-1'], createdAt: 1 }),
+        data: () => ({
+          ownerUserId: 'user-1',
+          memberIds: ['user-1'],
+          createdAt: 1,
+          itemCount: 2,
+        }),
+        ref: { path: 'lists/list-personal' },
       },
       {
         id: 'list-shared',
-        data: () => ({ ownerUserId: 'user-2', memberIds: ['user-1'], createdAt: 2 }),
+        data: () => ({
+          ownerUserId: 'user-2',
+          memberIds: ['user-1'],
+          createdAt: 2,
+          itemCount: 1,
+        }),
+        ref: { path: 'lists/list-shared' },
       },
     ];
 
@@ -117,7 +132,13 @@ describe('listService', () => {
       empty: false,
       docs: [{
         id: 'list-personal',
-        data: () => ({ ownerUserId: 'user-1', memberIds: ['user-1'], createdAt: 1 }),
+        data: () => ({
+          ownerUserId: 'user-1',
+          memberIds: ['user-1'],
+          createdAt: 1,
+          itemCount: 0,
+        }),
+        ref: { path: 'lists/list-personal' },
       }],
     });
     getDocMock.mockResolvedValueOnce({ exists: () => false });
