@@ -51,6 +51,14 @@ describe('useItems', () => {
     expect(screen.getByTestId('state').textContent).toBe('none');
   });
 
+  it('shows loading state before snapshot arrives', () => {
+    onSnapshotMock.mockImplementation(() => vi.fn());
+
+    render(React.createElement(TestComponent, { listId: 'list-1' }));
+
+    expect(screen.getByTestId('state').textContent).toBe('loading');
+  });
+
   it('maps items from snapshot', () => {
     onSnapshotMock.mockImplementation((_ref, onNext) => {
       onNext({

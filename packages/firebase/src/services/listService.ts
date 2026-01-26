@@ -5,6 +5,7 @@ import {
   collection,
   query,
   where,
+  limit,
   writeBatch,
   Timestamp,
   updateDoc,
@@ -144,7 +145,14 @@ export async function getUserLists(
 
       const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
       const membershipSnapshot = await getDoc(membershipRef);
-      if (!membershipSnapshot.exists()) return null;
+      if (!membershipSnapshot.exists()) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            `Missing membership for user ${userId} on list ${listDoc.id}; skipping list entry.`
+          );
+        }
+        return null;
+      }
 
       const membershipData = membershipSnapshot.data();
       const membership: Membership = {
@@ -188,7 +196,8 @@ export async function getPersonalList(
   // Query for list where user is the owner
   const listsQuery = query(
     collection(db, 'lists'),
-    where('ownerUserId', '==', userId)
+    where('ownerUserId', '==', userId),
+    limit(1)
   );
   const listsSnapshot = await getDocs(listsQuery);
 
@@ -216,6 +225,11 @@ export async function getPersonalList(
   const membershipSnapshot = await getDoc(membershipRef);
 
   if (!membershipSnapshot.exists()) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `Missing membership for owner ${userId} on personal list ${listDoc.id}.`
+      );
+    }
     return null;
   }
 
@@ -239,7 +253,8 @@ export async function hasPersonalList(userId: string): Promise<boolean> {
 
   const listsQuery = query(
     collection(db, 'lists'),
-    where('ownerUserId', '==', userId)
+    where('ownerUserId', '==', userId),
+    limit(1)
   );
   const listsSnapshot = await getDocs(listsQuery);
 

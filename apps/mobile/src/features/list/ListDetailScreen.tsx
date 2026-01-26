@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
@@ -36,6 +37,10 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
   const { showUndoToast } = useToast();
   const { isConnected } = useNetworkStatus();
   const { hasPendingWrites, markWritePending } = useSyncStatus();
+  const showError = useCallback((message: string, error?: unknown) => {
+    console.error(message, error);
+    Alert.alert('Something went wrong', message);
+  }, []);
 
   // Firebase data
   const { list, isLoading: isListLoading } = useList(listId);
@@ -72,14 +77,25 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
       showUndoToast({
         message: `${checkedCount} item${checkedCount > 1 ? 's' : ''} cleared`,
         onUndo: async () => {
-          markWritePending();
-          await bulkUndelete(listId, itemIds);
+          try {
+            markWritePending();
+            await bulkUndelete(listId, itemIds);
+          } catch (error) {
+            showError('Unable to undo clear. Please try again.', error);
+          }
         },
       });
     } catch {
-      // Silent error handling
+      showError('Unable to clear checked items. Please try again.');
     }
-  }, [listId, checkedItems, checkedCount, markWritePending, showUndoToast]);
+  }, [
+    listId,
+    checkedItems,
+    checkedCount,
+    markWritePending,
+    showUndoToast,
+    showError,
+  ]);
 
   // Memoize overflow menu items (rerender-memo-with-default-value)
   const overflowMenuItems = useMemo(

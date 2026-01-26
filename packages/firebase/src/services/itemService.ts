@@ -41,6 +41,7 @@ function getItemsCollectionRef(listId: string) {
 /**
  * Counts non-deleted items in a list.
  * Used for enforcing the 200 items per list limit.
+ * Prefer list.itemCount when available; use this as a fallback if missing.
  */
 export async function getItemCount(listId: string): Promise<number> {
   const itemsRef = getItemsCollectionRef(listId);

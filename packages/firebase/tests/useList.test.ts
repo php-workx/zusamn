@@ -58,5 +58,6 @@ describe('useList', () => {
     render(React.createElement(TestComponent, { listId: 'list-1' }));
 
     expect(screen.getByTestId('state').textContent).toBe('list-1');
+    expect(docMock).toHaveBeenCalled();
   });
 });

@@ -8,6 +8,7 @@ const batchCommitMock = vi.fn();
 const collectionMock = vi.fn();
 const queryMock = vi.fn();
 const whereMock = vi.fn();
+const limitMock = vi.fn();
 const docMock = vi.fn();
 const updateDocMock = vi.fn();
 const timestampNowMock = vi.fn();
@@ -20,6 +21,7 @@ vi.mock('firebase/firestore', () => ({
   collection: (...args: unknown[]) => collectionMock(...args),
   query: (...args: unknown[]) => queryMock(...args),
   where: (...args: unknown[]) => whereMock(...args),
+  limit: (...args: unknown[]) => limitMock(...args),
   getDocs: (...args: unknown[]) => getDocsMock(...args),
   getDoc: (...args: unknown[]) => getDocMock(...args),
   writeBatch: (...args: unknown[]) => writeBatchMock(...args),
@@ -42,6 +44,7 @@ beforeEach(() => {
   collectionMock.mockReset();
   queryMock.mockReset();
   whereMock.mockReset();
+  limitMock.mockReset();
   docMock.mockReset();
   updateDocMock.mockReset();
   timestampNowMock.mockReset();
@@ -52,10 +55,9 @@ beforeEach(() => {
   });
 
   docMock.mockImplementation((...args: unknown[]) => {
-    if (args.length === 1) {
-      return { id: 'list-1' };
-    }
-    return { id: args[2] ?? 'doc' };
+    const pathSegments = args.slice(1) as string[];
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    return { id: lastSegment ?? 'list-1' };
   });
 
   timestampNowMock.mockReturnValue(1234567890);
@@ -155,5 +157,14 @@ describe('listService', () => {
     const result = await hasPersonalList('user-1');
 
     expect(result).toBe(true);
+  });
+
+  it('hasPersonalList returns false when no list exists', async () => {
+    const { hasPersonalList } = await loadListService();
+    getDocsMock.mockResolvedValueOnce({ empty: true, docs: [] });
+
+    const result = await hasPersonalList('user-1');
+
+    expect(result).toBe(false);
   });
 });

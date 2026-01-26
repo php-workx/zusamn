@@ -71,4 +71,13 @@ describe('deleteAccount', () => {
     });
     expect(signOutMock).not.toHaveBeenCalled();
   });
+
+  it('signs out on non-reauth errors before rethrowing', async () => {
+    const { deleteAccount } = await loadAccountService();
+    const genericError = new Error('Network error');
+    deleteUserMock.mockRejectedValueOnce(genericError);
+
+    await expect(deleteAccount(userId)).rejects.toThrow('Network error');
+    expect(signOutMock).toHaveBeenCalledTimes(1);
+  });
 });
