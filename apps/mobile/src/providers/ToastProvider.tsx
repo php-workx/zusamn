@@ -43,6 +43,7 @@ interface ToastProviderProps {
  * - If a new toast is shown while another is active, the previous toast is
  *   dismissed and its onFinalize callback is called (action cannot be undone)
  * - Toast auto-dismisses after 5 seconds
+ * - onFinalize runs synchronously; async work should handle its own errors
  *
  * Usage:
  * ```tsx

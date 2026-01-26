@@ -10,7 +10,7 @@ export interface ValidationResult {
  * Validates item text (max 100 characters)
  */
 export function isValidText(text: string): boolean {
-  return typeof text === 'string' && text.length > 0 && text.length <= MAX_TEXT_LENGTH;
+  return validateItemText(text).valid;
 }
 
 /**

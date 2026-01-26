@@ -6,6 +6,7 @@ import {
   query,
   where,
   writeBatch,
+  limit,
   Timestamp,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
@@ -133,6 +134,10 @@ export async function getUserLists(
       };
 
       results.push({ list, membership });
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `Missing membership for user ${userId} on list ${listDoc.id}; skipping list entry.`
+      );
     }
   }
 
@@ -190,6 +195,11 @@ export async function getPersonalList(
   const membershipSnapshot = await getDoc(membershipRef);
 
   if (!membershipSnapshot.exists()) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `Missing membership for owner ${userId} on personal list ${listDoc.id}.`
+      );
+    }
     return null;
   }
 
@@ -213,7 +223,8 @@ export async function hasPersonalList(userId: string): Promise<boolean> {
 
   const listsQuery = query(
     collection(db, 'lists'),
-    where('ownerUserId', '==', userId)
+    where('ownerUserId', '==', userId),
+    limit(1)
   );
   const listsSnapshot = await getDocs(listsQuery);
 

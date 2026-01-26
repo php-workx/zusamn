@@ -167,6 +167,10 @@ describe('validators', () => {
       expect(isValidText('')).toBe(false);
     });
 
+    it('returns false for whitespace-only text', () => {
+      expect(isValidText('   ')).toBe(false);
+    });
+
     it('returns false for text over 100 characters', () => {
       expect(isValidText('a'.repeat(101))).toBe(false);
     });
