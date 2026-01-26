@@ -107,53 +107,94 @@ jest.mock('@zusamn/ui', () => {
   };
 });
 
-beforeEach(() => {
-  mockSignOut.mockClear();
-  mockDeleteAccount.mockClear();
-  mockNetInfoFetch.mockReset();
-});
-it('renders display name and action buttons', () => {
-  const { getByText } = render(<AccountScreen />);
-
-  expect(getByText('Test User')).toBeTruthy();
-  expect(getByText('Logout')).toBeTruthy();
-  expect(getByText('Delete Account')).toBeTruthy();
-});
-
-it('calls signOut when Logout is pressed', () => {
-  const { getByText } = render(<AccountScreen />);
-
-  fireEvent.press(getByText('Logout'));
-
-  expect(mockSignOut).toHaveBeenCalledTimes(1);
-});
-
-it('blocks delete account when offline', async () => {
-  mockNetInfoFetch.mockResolvedValueOnce({ isConnected: false });
-
-  const { getByText, findByText } = render(<AccountScreen />);
-
-  fireEvent.press(getByText('Delete Account'));
-
-  expect(await findByText('Delete Account requires an internet connection.')).toBeTruthy();
-  expect(mockDeleteAccount).not.toHaveBeenCalled();
-});
-
-it('confirms and calls deleteAccount when online', async () => {
-  mockNetInfoFetch.mockResolvedValueOnce({ isConnected: true });
-  mockDeleteAccount.mockResolvedValueOnce(undefined);
-
-  const { getByText } = render(<AccountScreen />);
-
-  fireEvent.press(getByText('Delete Account'));
-
-  await waitFor(() => {
-    expect(getByText('Delete your account?')).toBeTruthy();
+describe('AccountScreen', () => {
+  beforeEach(() => {
+    mockSignOut.mockClear();
+    mockDeleteAccount.mockClear();
+    mockNetInfoFetch.mockReset();
   });
 
-  fireEvent.press(getByText('Delete'));
+  it('renders display name and action buttons', () => {
+    const { getByText } = render(<AccountScreen />);
 
-  await waitFor(() => {
-    expect(mockDeleteAccount).toHaveBeenCalledWith('user-1');
+    expect(getByText('Test User')).toBeTruthy();
+    expect(getByText('Logout')).toBeTruthy();
+    expect(getByText('Delete Account')).toBeTruthy();
+  });
+
+  it('calls signOut when Logout is pressed', () => {
+    const { getByText } = render(<AccountScreen />);
+
+    fireEvent.press(getByText('Logout'));
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks delete account when offline', async () => {
+    mockNetInfoFetch.mockResolvedValueOnce({ isConnected: false });
+
+    const { getByText, findByText } = render(<AccountScreen />);
+
+    fireEvent.press(getByText('Delete Account'));
+
+    expect(
+      await findByText('Delete Account requires an internet connection.')
+    ).toBeTruthy();
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
+  });
+
+  it('confirms and calls deleteAccount when online', async () => {
+    mockNetInfoFetch.mockResolvedValueOnce({ isConnected: true });
+    mockDeleteAccount.mockResolvedValueOnce(undefined);
+
+    const { getByText } = render(<AccountScreen />);
+
+    fireEvent.press(getByText('Delete Account'));
+
+    await waitFor(() => {
+      expect(getByText('Delete your account?')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Delete'));
+
+    await waitFor(() => {
+      expect(mockDeleteAccount).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  it('shows error when deleteAccount fails', async () => {
+    mockNetInfoFetch.mockResolvedValueOnce({ isConnected: true });
+    mockDeleteAccount.mockRejectedValueOnce(new Error('Deletion failed'));
+
+    const { getByText, findByText } = render(<AccountScreen />);
+
+    fireEvent.press(getByText('Delete Account'));
+
+    await waitFor(() => {
+      expect(getByText('Delete your account?')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Delete'));
+
+    expect(await findByText('Deletion failed')).toBeTruthy();
+  });
+
+  it('dismisses the confirmation dialog on cancel', async () => {
+    mockNetInfoFetch.mockResolvedValueOnce({ isConnected: true });
+
+    const { getByText, queryByText } = render(<AccountScreen />);
+
+    fireEvent.press(getByText('Delete Account'));
+
+    await waitFor(() => {
+      expect(getByText('Delete your account?')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Cancel'));
+
+    await waitFor(() => {
+      expect(queryByText('Delete your account?')).toBeNull();
+    });
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
   });
 });

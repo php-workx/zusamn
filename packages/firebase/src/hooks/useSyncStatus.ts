@@ -7,6 +7,8 @@ export interface SyncStatus {
   hasPendingWrites: boolean;
   /** Manually mark that a write operation has started */
   markWritePending: () => void;
+  /** Manually clear pending write state */
+  clearWritePending: () => void;
 }
 
 /**
@@ -76,5 +78,13 @@ export function useSyncStatus(): SyncStatus {
     }, 30000);
   }, []);
 
-  return { hasPendingWrites, markWritePending };
+  const clearWritePending = useCallback(() => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
+    }
+    setHasPendingWrites(false);
+  }, []);
+
+  return { hasPendingWrites, markWritePending, clearWritePending };
 }
