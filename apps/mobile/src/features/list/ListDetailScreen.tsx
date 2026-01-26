@@ -48,7 +48,7 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
   // Determine status subtitle (Offline > Syncing priority per spec)
   const getStatusSubtitle = useCallback((): string | undefined => {
     if (!isConnected) return 'Offline';
-    if (hasPendingWrites) return 'Syncing...';
+    if (hasPendingWrites) return 'Syncing';
     return undefined;
   }, [isConnected, hasPendingWrites]);
 
@@ -143,8 +143,7 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
         <ConfirmDialog
           visible={showClearDialog}
           onCancel={() => setShowClearDialog(false)}
-          title="Clear checked items?"
-          description={`This will delete ${checkedCount} checked item${checkedCount !== 1 ? 's' : ''}.`}
+          title={`Clear ${checkedCount} checked item${checkedCount !== 1 ? 's' : ''}?`}
           confirmLabel="Clear"
           onConfirm={handleClearChecked}
           destructive

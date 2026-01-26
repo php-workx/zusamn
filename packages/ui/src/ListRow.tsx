@@ -1,3 +1,4 @@
+import type { AccessibilityActionEvent } from 'react-native';
 import { Text, XStack, YStack } from 'tamagui';
 
 export interface ListRowProps {
@@ -9,6 +10,8 @@ export interface ListRowProps {
   onPress: () => void;
   /** Called when the row is long-pressed (e.g., for delete) */
   onLongPress?: () => void;
+  /** Called when delete accessibility action is triggered */
+  onDelete?: () => void;
   /** Whether this item was changed by remote user (for highlight effect) */
   isRemoteChange?: boolean;
 }
@@ -23,8 +26,15 @@ export function ListRow({
   checked,
   onPress,
   onLongPress,
+  onDelete,
   isRemoteChange = false,
 }: ListRowProps) {
+  const handleAccessibilityAction = (event: AccessibilityActionEvent) => {
+    if (event.nativeEvent.actionName === 'delete' && onDelete) {
+      onDelete();
+    }
+  };
+
   return (
     <XStack
       minHeight={48}
@@ -40,6 +50,8 @@ export function ListRow({
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       accessibilityLabel={`${text}, ${checked ? 'checked' : 'unchecked'}`}
+      accessibilityActions={onDelete ? [{ name: 'delete', label: `Delete ${text}` }] : undefined}
+      onAccessibilityAction={onDelete ? handleAccessibilityAction : undefined}
     >
       {/* Checkbox */}
       <YStack

@@ -43,7 +43,7 @@ export function AddItemInput({ listId, userId, onWritePending }: AddItemInputPro
       // Check for specific list full error
       const message = err instanceof Error ? err.message : '';
       if (message.startsWith(LIST_FULL_ERROR)) {
-        setError(`This list has reached the maximum of ${MAX_ITEMS_PER_LIST} items. Delete some items to add more.`);
+        setError(`List full (${MAX_ITEMS_PER_LIST} items). Clear checked items to add more.`);
       } else {
         setError('Failed to add item. Please try again.');
       }

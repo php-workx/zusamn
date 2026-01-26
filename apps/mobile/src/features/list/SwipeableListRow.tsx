@@ -62,6 +62,7 @@ export function SwipeableListRow({
         checked={item.checked}
         onPress={handlePress}
         onLongPress={handleLongPress}
+        onDelete={handleLongPress}
       />
     </Swipeable>
   );
