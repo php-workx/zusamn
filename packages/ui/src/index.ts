@@ -1,6 +1,6 @@
 export { AppProvider } from './providers';
 export { tamaguiConfig } from './tamagui.config';
-export { Button, Stack, Text, Theme, useTheme, XStack, YStack } from 'tamagui';
+export { Button, Input, Stack, Text, Theme, useTheme, XStack, YStack } from 'tamagui';
 
 // House components
 export { Screen, type ScreenProps } from './Screen';
@@ -14,3 +14,5 @@ export { ConfirmDialog, type ConfirmDialogProps } from './ConfirmDialog';
 export { SheetModal, type SheetModalProps } from './SheetModal';
 export { Separator, type SeparatorProps } from './Separator';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { ListRow, type ListRowProps } from './ListRow';
+export { OverflowMenu, type OverflowMenuProps, type OverflowMenuItem } from './OverflowMenu';
