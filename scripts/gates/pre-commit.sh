@@ -35,8 +35,40 @@ run_gate() {
   return $exit_code
 }
 
-# 1. Type checking (blocking)
-echo "→ [1/5] Type checking..."
+# 1. Secret scan on staged files (blocking - MUST be first!)
+echo "→ [1/6] Scanning for secrets..."
+if command -v gitleaks &> /dev/null; then
+  # Scan only staged changes (fast, catches secrets before they enter history)
+  if ! gitleaks protect --staged --redact --no-banner 2>/dev/null; then
+    echo ""
+    echo "❌ SECRETS DETECTED in staged files!"
+    echo ""
+    echo "   Remove the secret and use environment variables instead."
+    echo "   If this is a false positive, add to .gitleaks.toml allowlist."
+    exit 1
+  fi
+  echo "  ✓ No secrets found"
+else
+  # Fallback: basic pattern check on staged files
+  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|json|yaml|yml|env)$' || true)
+  if [ -n "$STAGED_FILES" ]; then
+    # Check for common secret patterns
+    SECRET_PATTERNS="AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|sk-[a-zA-Z0-9]{48}|ghp_[a-zA-Z0-9]{36}|-----BEGIN.*PRIVATE KEY-----"
+    FOUND=$(echo "$STAGED_FILES" | xargs git diff --cached -- | grep -E "$SECRET_PATTERNS" || true)
+    if [ -n "$FOUND" ]; then
+      echo "❌ Potential secrets found in staged changes!"
+      echo "$FOUND" | head -5
+      echo ""
+      echo "   Install gitleaks for better detection: brew install gitleaks"
+      exit 1
+    fi
+  fi
+  echo "  ✓ Basic scan OK (install gitleaks for better detection)"
+fi
+echo ""
+
+# 2. Type checking (blocking)
+echo "→ [2/6] Type checking..."
 if ! run_gate "typecheck" "pnpm typecheck" 5; then
   echo "❌ Type check failed"
   exit 1
@@ -44,8 +76,8 @@ fi
 echo "  ✓ Types OK"
 echo ""
 
-# 2. Lint (blocking)
-echo "→ [2/5] Linting..."
+# 3. Lint (blocking)
+echo "→ [3/6] Linting..."
 if ! run_gate "lint" "pnpm lint" 5; then
   echo "❌ Lint failed"
   exit 1
@@ -53,8 +85,8 @@ fi
 echo "  ✓ Lint OK"
 echo ""
 
-# 3. Fast unit tests (blocking)
-echo "→ [3/5] Running fast tests..."
+# 4. Fast unit tests (blocking)
+echo "→ [4/6] Running fast tests..."
 if ! run_gate "test" "pnpm test:unit" 15; then
   echo ""
   echo "❌ Unit tests failed"
@@ -63,8 +95,8 @@ fi
 echo "  ✓ Tests OK"
 echo ""
 
-# 4. Security audit (warning only for medium, blocking for high/critical)
-echo "→ [4/5] Security audit..."
+# 5. Security audit (warning only for medium, blocking for high/critical)
+echo "→ [5/6] Security audit..."
 AUDIT_OUTPUT=$(pnpm audit --audit-level=high 2>&1) || true
 if echo "$AUDIT_OUTPUT" | grep -qE "(critical|high).*vulnerabilit"; then
   echo "❌ Critical/high security vulnerabilities found:"
@@ -76,8 +108,8 @@ fi
 echo "  ✓ Security OK"
 echo ""
 
-# 5. Beads status check (warning only)
-echo "→ [5/5] Checking task status..."
+# 6. Beads status check (warning only)
+echo "→ [6/6] Checking task status..."
 if command -v bd &> /dev/null; then
   IN_PROGRESS=$(bd list --status=in_progress 2>/dev/null | grep -v "^$" | head -5 || true)
   if [ -n "$IN_PROGRESS" ]; then
