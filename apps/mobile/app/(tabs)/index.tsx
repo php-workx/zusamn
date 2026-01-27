@@ -35,6 +35,7 @@ import {
   createPersonalList,
   useUser,
   getUserDisplayNames,
+  leaveList,
 } from '@zusamn/firebase';
 import { MAX_TEXT_LENGTH, MAX_ITEMS_PER_LIST } from '@zusamn/domain';
 import type { Item } from '@zusamn/domain';
@@ -87,6 +88,10 @@ export default function ListDetailScreen() {
   // Rename alias state
   const [showRenameSheet, setShowRenameSheet] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ listId: string; alias: string } | null>(null);
+
+  // Leave list state
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   // Swipeable refs for closing
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -496,6 +501,29 @@ export default function ListDetailScreen() {
     setRenameTarget(null);
   }, []);
 
+  // Handle leave list confirmation
+  const handleLeaveList = useCallback(async () => {
+    if (!listId || !user?.uid) return;
+
+    setIsLeaving(true);
+    setShowLeaveDialog(false);
+
+    try {
+      await leaveList(listId, user.uid);
+      // Clear cached list and navigate to personal list
+      clearLastUsedListId();
+      await ensurePersonalList();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to leave list';
+      Alert.alert('Unable to leave list', message);
+    } finally {
+      setIsLeaving(false);
+    }
+  }, [listId, user?.uid, clearLastUsedListId, ensurePersonalList]);
+
+  // Determine if this is a shared list (not the user's personal list)
+  const isSharedList = list && user?.uid && list.ownerUserId !== user.uid;
+
   // Separate items into unchecked and checked
   // Items pending sink stay with unchecked items visually
   const uncheckedItems = items.filter((item) => !item.checked);
@@ -543,6 +571,16 @@ export default function ListDetailScreen() {
       onPress: () => setShowClearDialog(true),
       destructive: true,
     },
+    // Only show "Leave List" for shared lists (not personal list)
+    ...(isSharedList
+      ? [
+          {
+            label: 'Leave List',
+            onPress: () => setShowLeaveDialog(true),
+            destructive: true,
+          },
+        ]
+      : []),
   ];
 
   // Render delete action for swipe
@@ -673,6 +711,16 @@ export default function ListDetailScreen() {
           description={`This will delete ${checkedCount} checked item${checkedCount !== 1 ? 's' : ''}.`}
           confirmLabel="Clear"
           onConfirm={handleClearChecked}
+          destructive
+        />
+
+        <ConfirmDialog
+          visible={showLeaveDialog}
+          onCancel={() => setShowLeaveDialog(false)}
+          title="Leave this list?"
+          description="You'll lose access to this list."
+          confirmLabel="Leave"
+          onConfirm={handleLeaveList}
           destructive
         />
 
