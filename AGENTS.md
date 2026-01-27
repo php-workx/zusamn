@@ -9,6 +9,20 @@
 
 ---
 
+## Critical Rules
+
+| Rule                                          | Reason                                     |
+|-----------------------------------------------|--------------------------------------------|
+| NEVER push to remote                          | User pushes when ready                     |
+| NEVER commit to main                          | Always use feature branches                |
+| Task = `gate:commit`                          | Automatic via pre-commit hooks             |
+| Epic/Phase = `gate:push` + `/security-review` | Manual, thorough checks                    |
+| Fix failures immediately                      | Don't leave broken gates for user          |
+| Always commit before stopping                 | Don't leave work stranded locally          |
+| NEVER change `gate` rules                     | gates protect quality and set expectations |
+
+---
+
 ## Workflow: Completing a Task
 
 After finishing a **single beads issue**:
@@ -72,19 +86,6 @@ Summarize for the user:
 - Any notes or follow-ups
 
 This is **thorough (~5min)** and happens once per epic/phase.
-
----
-
-## Critical Rules
-
-| Rule | Reason |
-|------|--------|
-| NEVER push to remote | User pushes when ready |
-| NEVER commit to main | Always use feature branches |
-| Task = `gate:commit` | Automatic via pre-commit hooks |
-| Epic/Phase = `gate:push` + `/security-review` | Manual, thorough checks |
-| Fix failures immediately | Don't leave broken gates for user |
-| Always commit before stopping | Don't leave work stranded locally |
 
 ---
 
