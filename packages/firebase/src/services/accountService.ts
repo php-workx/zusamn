@@ -106,7 +106,11 @@ export async function deleteAccount(userId: string): Promise<void> {
   } catch (error) {
     // Auth user already deleted - Firestore cleanup failed but user can't log in.
     // Orphaned data can be cleaned up later via scheduled jobs.
-    console.error('Firestore cleanup failed after Auth deletion. Orphaned userId:', currentUser.uid, error);
+    console.error(
+      'Firestore cleanup failed after Auth deletion. Orphaned userId:',
+      currentUser.uid,
+      error
+    );
   }
 
   await signOut();

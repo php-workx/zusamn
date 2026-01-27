@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config';
 
 /**
  * Vitest configuration for emulator/integration tests.
@@ -9,18 +9,18 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   test: {
-    environment: "node",
+    environment: 'node',
     include: [
-      "**/*.emulator.test.ts",
-      "**/*.emulator.test.tsx",
-      "**/*.integration.test.ts",
-      "**/*.integration.test.tsx",
+      '**/*.emulator.test.ts',
+      '**/*.emulator.test.tsx',
+      '**/*.integration.test.ts',
+      '**/*.integration.test.tsx',
     ],
-    exclude: ["**/node_modules/**"],
+    exclude: ['**/node_modules/**'],
     testTimeout: 60000,
     hookTimeout: 60000,
     // Run sequentially - emulator tests can conflict
-    pool: "forks",
+    pool: 'forks',
     poolOptions: {
       forks: {
         singleFork: true,
