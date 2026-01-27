@@ -7,7 +7,7 @@ import {
   membershipSchema,
   userSchema,
 } from './schemas';
-import { isValidAlias, isValidLocale, isValidText } from './validators';
+import { isValidAlias, isValidLocale, isValidText, validateItemText } from './validators';
 
 const now = Date.now();
 
@@ -157,6 +157,51 @@ describe('domain schemas', () => {
 });
 
 describe('validators', () => {
+  describe('validateItemText', () => {
+    it('returns valid for normal text', () => {
+      const result = validateItemText('Milk');
+      expect(result.valid).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+
+    it('returns valid for max length text', () => {
+      const result = validateItemText('a'.repeat(100));
+      expect(result.valid).toBe(true);
+    });
+
+    it('returns error for non-string input', () => {
+      // @ts-expect-error Testing runtime validation
+      const result = validateItemText(123);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text must be a string');
+    });
+
+    it('returns error for null input', () => {
+      // @ts-expect-error Testing runtime validation
+      const result = validateItemText(null);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text must be a string');
+    });
+
+    it('returns error for empty string', () => {
+      const result = validateItemText('');
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text cannot be empty');
+    });
+
+    it('returns error for whitespace-only string', () => {
+      const result = validateItemText('   ');
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Item text cannot be empty');
+    });
+
+    it('returns error for text over max length', () => {
+      const result = validateItemText('a'.repeat(101));
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('exceeds maximum length');
+    });
+  });
+
   describe('isValidText', () => {
     it('returns true for valid text', () => {
       expect(isValidText('Milk')).toBe(true);
@@ -188,6 +233,15 @@ describe('validators', () => {
 
     it('returns false for alias over 50 characters', () => {
       expect(isValidAlias('a'.repeat(51))).toBe(false);
+    });
+
+    it('returns false for non-string input', () => {
+      // @ts-expect-error Testing runtime validation
+      expect(isValidAlias(123)).toBe(false);
+      // @ts-expect-error Testing runtime validation
+      expect(isValidAlias(null)).toBe(false);
+      // @ts-expect-error Testing runtime validation
+      expect(isValidAlias(undefined)).toBe(false);
     });
   });
 
