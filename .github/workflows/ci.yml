@@ -6,7 +6,33 @@ on:
   pull_request:
 
 jobs:
+  secrets:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -18,7 +44,21 @@ jobs:
       - run: pnpm install
       - run: pnpm lint
 
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm format:check
+
   typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -31,6 +71,7 @@ jobs:
       - run: pnpm typecheck
 
   test:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -41,12 +82,14 @@ jobs:
           cache: pnpm
       - run: pnpm install
       - name: Run tests with coverage
-        run: pnpm test
+        run: pnpm test:coverage
+      - name: Check coverage thresholds
+        run: pnpm gate:coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/domain/coverage/lcov.info,packages/ui/coverage/lcov.info
+          files: coverage/lcov.info
           fail_ci_if_error: false
           verbose: true
       - name: Upload test results to Codecov
@@ -56,6 +99,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -68,6 +112,7 @@ jobs:
       - run: pnpm build
 
   functions:
+    name: Firebase Functions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
