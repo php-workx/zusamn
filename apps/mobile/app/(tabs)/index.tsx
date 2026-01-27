@@ -265,7 +265,13 @@ export default function ListDetailScreen() {
     if (!text || !listId || !user?.uid) return;
 
     // Check item limit
-    const count = typeof list?.itemCount === 'number' ? list.itemCount : await getItemCount(listId);
+    let count: number;
+    try {
+      count = typeof list?.itemCount === 'number' ? list.itemCount : await getItemCount(listId);
+    } catch {
+      // If we can't get the count, allow the add and let server enforce limit
+      count = 0;
+    }
     if (count >= MAX_ITEMS_PER_LIST) {
       Alert.alert(
         'List is full',
@@ -479,6 +485,10 @@ export default function ListDetailScreen() {
 
     // Resume all pending sink timers
     if (pendingSinkItemIds.size > 0) {
+      // Clear any outstanding timers before sinking
+      for (const timeoutId of sinkTimeoutsRef.current.values()) {
+        clearTimeout(timeoutId);
+      }
       // After a brief delay, sink all pending items
       setTimeout(() => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);

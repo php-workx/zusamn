@@ -7,7 +7,7 @@ export interface ListRowProps {
   checked: boolean;
   /** Called when the row is pressed to toggle checked state */
   onPress: () => void;
-  /** Called when the row is long-pressed (e.g., for delete action) */
+  /** Called when the row is long-pressed (e.g., for contextual actions) */
   onLongPress?: () => void;
   /** Whether this item should be highlighted (remote change indicator) */
   highlighted?: boolean;

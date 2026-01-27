@@ -196,7 +196,13 @@ export async function softDeleteItem(listId: string, itemId: string): Promise<vo
     }
 
     const listData = listSnapshot.data();
-    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      currentCount = await getItemCount(listId);
+    }
 
     transaction.update(itemRef, {
       deleted: true,
@@ -239,7 +245,13 @@ export async function undeleteItem(listId: string, itemId: string): Promise<void
     }
 
     const listData = listSnapshot.data();
-    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      currentCount = await getItemCount(listId);
+    }
 
     if (currentCount + 1 > LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(

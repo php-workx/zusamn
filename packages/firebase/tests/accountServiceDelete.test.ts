@@ -53,12 +53,14 @@ describe('accountService deleteAccount', () => {
     authMocks.updateDocMock.mockReset();
   });
 
-  it('signs out on non-reauth errors before rethrowing', async () => {
+  it('throws on non-reauth errors without signing out (auth-first approach)', async () => {
+    // With auth-first deletion, if Auth deletion fails, user account still exists
+    // so we don't sign out - user can retry after resolving the issue
     const genericError = new Error('Network error');
     authMocks.deleteUserMock.mockRejectedValueOnce(genericError);
 
     await expect(deleteAccount('user-1')).rejects.toThrow('Network error');
-    expect(authMocks.signOutMock).toHaveBeenCalledTimes(1);
+    expect(authMocks.signOutMock).not.toHaveBeenCalled();
   });
 
   it('rethrows reauth-required errors without signing out', async () => {

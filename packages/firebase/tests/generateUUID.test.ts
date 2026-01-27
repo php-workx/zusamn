@@ -96,9 +96,9 @@ describe('generateUUID', () => {
     it('uses expo-crypto when crypto.randomUUID unavailable', async () => {
       vi.stubGlobal('crypto', {}); // crypto exists but no randomUUID
 
-      // Mock require to return expo-crypto
+      // Use vi.doMock (not hoisted) so mockUUID is in scope
       const mockUUID = 'expo-4567-e89b-42d3-a456-426614174000';
-      vi.mock('expo-crypto', () => ({
+      vi.doMock('expo-crypto', () => ({
         randomUUID: () => mockUUID,
       }));
 

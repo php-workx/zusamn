@@ -56,7 +56,13 @@ echo "Looking for open tasks matching: $PHASE_PATTERN.*"
 echo ""
 
 # Get open tasks for this phase (excluding the epic itself)
-OPEN_PHASE_TASKS=$(bd list --status=open 2>/dev/null | grep "$PHASE_PATTERN\." | grep -vi "\[epic\]" || true)
+BD_LIST_OPEN=$(bd list --status=open 2>&1)
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to query beads issues"
+  echo "$BD_LIST_OPEN"
+  exit 1
+fi
+OPEN_PHASE_TASKS=$(echo "$BD_LIST_OPEN" | grep "$PHASE_PATTERN\." | grep -vi "\[epic\]" || true)
 
 if [ -n "$OPEN_PHASE_TASKS" ]; then
   echo "❌ Open tasks found for Phase $PHASE_NUM:"
@@ -70,7 +76,13 @@ if [ -n "$OPEN_PHASE_TASKS" ]; then
 fi
 
 # Check for in_progress tasks
-IN_PROGRESS=$(bd list --status=in_progress 2>/dev/null | grep "$PHASE_PATTERN" || true)
+BD_LIST_INPROG=$(bd list --status=in_progress 2>&1)
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to query beads issues"
+  echo "$BD_LIST_INPROG"
+  exit 1
+fi
+IN_PROGRESS=$(echo "$BD_LIST_INPROG" | grep -E "${PHASE_PATTERN}(\.|$)" || true)
 if [ -n "$IN_PROGRESS" ]; then
   echo "⚠️  Tasks still in progress:"
   echo "$IN_PROGRESS"

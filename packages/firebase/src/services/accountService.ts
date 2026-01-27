@@ -87,18 +87,25 @@ export async function deleteAccount(userId: string): Promise<void> {
     );
   }
 
-  // Delete user data from Firestore first
-  await deleteAccountWithDb(db, currentUser.uid);
-
+  // Delete Firebase Auth user first - if this fails (e.g., requires-recent-login),
+  // we haven't touched Firestore data yet, leaving the account in a consistent state.
+  // If Auth deletion succeeds but Firestore cleanup fails, the user can't log in anyway,
+  // and orphaned data can be cleaned up via scheduled jobs or manual intervention.
   try {
     await deleteUser(currentUser);
   } catch (error) {
     if (isReauthRequiredError(error)) {
       throw error;
     }
-
-    await signOut();
     throw error instanceof Error ? error : new Error('Failed to delete account');
+  }
+
+  // Clean up Firestore data after Auth deletion succeeds
+  try {
+    await deleteAccountWithDb(db, currentUser.uid);
+  } catch {
+    // Auth user already deleted - Firestore cleanup failed but user can't log in.
+    // Log for monitoring; orphaned data can be cleaned up later.
   }
 
   await signOut();
