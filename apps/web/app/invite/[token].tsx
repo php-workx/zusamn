@@ -162,9 +162,6 @@ function AppleSignInButton({ onPress, disabled }: { onPress: () => void; disable
       accessibilityState={{ disabled }}
       gap="$2"
     >
-      <Text fontSize={20} color="#ffffff">
-
-      </Text>
       <Text fontSize="$2" fontWeight="$1" color="#ffffff">
         Continue with Apple
       </Text>

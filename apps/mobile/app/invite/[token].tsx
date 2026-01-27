@@ -65,9 +65,10 @@ export default function InviteScreen() {
   // Validate token parameter
   useEffect(() => {
     if (!token || typeof token !== 'string' || token.trim() === '') {
+      clearPendingInvite(); // Clear invalid token to prevent retry loops
       setState({ status: 'invalid' });
     }
-  }, [token]);
+  }, [token, clearPendingInvite]);
 
   // Fetch and validate invite
   useEffect(() => {
@@ -83,6 +84,7 @@ export default function InviteScreen() {
         if (!active) return;
 
         if (!fetchedInvite) {
+          clearPendingInvite(); // Clear to prevent retry loops
           setState({
             status: 'error',
             message: getErrorMessage('invite_not_found'),
@@ -93,6 +95,7 @@ export default function InviteScreen() {
         // Check if expired
         const now = Date.now();
         if (fetchedInvite.expiresAt <= now) {
+          clearPendingInvite(); // Clear to prevent retry loops
           setState({
             status: 'error',
             message: getErrorMessage('invite_expired'),
@@ -102,6 +105,7 @@ export default function InviteScreen() {
 
         // Check if already used
         if (fetchedInvite.usedBy !== null) {
+          clearPendingInvite(); // Clear to prevent retry loops
           setState({
             status: 'error',
             message: getErrorMessage('invite_already_used'),
@@ -127,6 +131,7 @@ export default function InviteScreen() {
       } catch (error) {
         if (!active) return;
         console.error('Failed to fetch invite:', error);
+        clearPendingInvite(); // Clear to prevent retry loops
         setState({
           status: 'error',
           message: 'Failed to load invite. Please try again.',
@@ -139,7 +144,7 @@ export default function InviteScreen() {
     return () => {
       active = false;
     };
-  }, [token, user, isAuthLoading, state.status]);
+  }, [token, user, isAuthLoading, state.status, clearPendingInvite]);
 
   // Redeem invite when authenticated and ready
   useEffect(() => {
@@ -164,6 +169,7 @@ export default function InviteScreen() {
           setState({ status: 'success', listId: result.listId });
         } else {
           // Handle specific error cases
+          clearPendingInvite(); // Clear to prevent retry loops
           const message = getErrorMessage(result.reason);
 
           // If already a member, navigate to the list
@@ -180,6 +186,7 @@ export default function InviteScreen() {
       } catch (error) {
         if (!active) return;
         console.error('Failed to redeem invite:', error);
+        clearPendingInvite(); // Clear to prevent retry loops
         setState({
           status: 'error',
           message: 'Failed to join the list. Please try again.',

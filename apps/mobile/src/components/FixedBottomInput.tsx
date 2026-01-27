@@ -39,6 +39,8 @@ export function FixedBottomInput({
   onFocus,
   onBlur,
 }: FixedBottomInputProps) {
+  const isSubmitDisabled = disabled || !value.trim();
+
   const handleSubmit = () => {
     // Only submit if there's non-whitespace content
     if (value.trim()) {
@@ -101,13 +103,13 @@ export function FixedBottomInput({
             alignItems="center"
             justifyContent="center"
             paddingHorizontal="$3" // 12px
-            onPress={disabled ? undefined : handleSubmit}
-            pressStyle={disabled ? undefined : { opacity: 0.8 }}
-            opacity={disabled || !value.trim() ? 0.5 : 1}
+            onPress={isSubmitDisabled ? undefined : handleSubmit}
+            pressStyle={isSubmitDisabled ? undefined : { opacity: 0.8 }}
+            opacity={isSubmitDisabled ? 0.5 : 1}
             accessible
             accessibilityRole="button"
             accessibilityLabel="Add item"
-            accessibilityState={{ disabled: disabled || !value.trim() }}
+            accessibilityState={{ disabled: isSubmitDisabled }}
           >
             <Text
               fontSize="$2" // 17px

@@ -110,7 +110,7 @@ export async function getUserDisplayNames(userIds: string[]): Promise<string[]> 
     }
 
     const data = userSnapshot.data();
-    return data.displayName || 'Unknown';
+    return data.displayName?.trim() || 'Unknown';
   });
 
   return Promise.all(namePromises);

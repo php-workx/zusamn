@@ -22,7 +22,8 @@ echo ""
 
 # Extract functional requirements (FR-* patterns)
 FR_REQUIREMENTS=$(grep -oE "FR-[A-Z]+-[0-9]+" "$SPEC_FILE" | sort -u || true)
-FR_COUNT=$(echo "$FR_REQUIREMENTS" | grep -c "FR-" || echo "0")
+FR_COUNT=$(printf "%s\n" "$FR_REQUIREMENTS" | grep -c "FR-" || true)
+FR_COUNT=${FR_COUNT:-0}
 
 echo "Functional Requirements in spec: $FR_COUNT"
 echo ""

@@ -53,7 +53,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         const pendingToken = getPendingInvite();
         if (pendingToken) {
           pendingInviteHandled.current = true;
-          clearPendingInvite();
+          // Navigate first; clear token only after successful navigation
+          // The invite screen will clear the pending invite after handling
           router.replace(`/invite/${pendingToken}`);
           return;
         }

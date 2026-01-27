@@ -41,6 +41,12 @@ function detectLocale(): Locale {
  * Hook for accessing a user document with get/create logic.
  * Creates the user document if it doesn't exist (on first login).
  *
+ * Note: If passing options, memoize the object to avoid unnecessary effect re-runs:
+ * ```tsx
+ * const options = useMemo(() => ({ displayName, email }), [displayName, email]);
+ * const { user, isLoading, error } = useUser(authUser?.uid, options);
+ * ```
+ *
  * Usage:
  * ```tsx
  * const { user, isLoading, error } = useUser(authUser?.uid);

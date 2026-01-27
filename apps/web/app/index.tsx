@@ -5,7 +5,7 @@ import { Screen, Text, YStack } from '@zusamn/ui';
  * This is a minimal placeholder since the primary purpose of the web app
  * is the invite landing page at /invite/[token].
  *
- * Users who land here directly are redirected to app store links.
+ * Users who land here directly can install the app from iOS/Android stores.
  */
 export default function HomePage() {
   return (

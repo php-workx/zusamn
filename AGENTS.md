@@ -60,26 +60,26 @@ pnpm gate:push
 - **Fix any failures** before proceeding
 
 ### Step 2: Run Security Review
-```
+```bash
 /security-review
 ```
 - AI analyzes diff for security vulnerabilities
 - **Fix any HIGH/MEDIUM findings**
 
 ### Step 3: Run Code Review
-```
+```bash
 /review my changes in the current branch
 ```
 - AI analyzes diff and does a code review
 - **Fix any relevant findings**
 
-### Step 3: Final Sync
+### Step 4: Final Sync
 ```bash
 bd sync --from-main
 git status  # Verify all changes committed
 ```
 
-### Step 4: Hand Off
+### Step 5: Hand Off
 Summarize for the user:
 - What was implemented
 - What's ready for push
