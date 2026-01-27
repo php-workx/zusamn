@@ -52,6 +52,13 @@ pnpm gate:push
 - AI analyzes diff for security vulnerabilities
 - **Fix any HIGH/MEDIUM findings**
 
+### Step 3: Run Code Review
+```
+/review my changes in the current branch
+```
+- AI analyzes diff and does a code review
+- **Fix any relevant findings**
+
 ### Step 3: Final Sync
 ```bash
 bd sync --from-main
