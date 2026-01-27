@@ -37,34 +37,25 @@ run_gate() {
 
 # 1. Secret scan on staged files (blocking - MUST be first!)
 echo "→ [1/6] Scanning for secrets..."
-if command -v gitleaks &> /dev/null; then
-  # Scan only staged changes (fast, catches secrets before they enter history)
-  if ! gitleaks protect --staged --redact --no-banner 2>/dev/null; then
-    echo ""
-    echo "❌ SECRETS DETECTED in staged files!"
-    echo ""
-    echo "   Remove the secret and use environment variables instead."
-    echo "   If this is a false positive, add to .gitleaks.toml allowlist."
-    exit 1
-  fi
-  echo "  ✓ No secrets found"
-else
-  # Fallback: basic pattern check on staged files
-  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|json|yaml|yml|env)$' || true)
-  if [ -n "$STAGED_FILES" ]; then
-    # Check for common secret patterns
-    SECRET_PATTERNS="AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|sk-[a-zA-Z0-9]{48}|ghp_[a-zA-Z0-9]{36}|-----BEGIN.*PRIVATE KEY-----"
-    FOUND=$(echo "$STAGED_FILES" | xargs git diff --cached -- | grep -E "$SECRET_PATTERNS" || true)
-    if [ -n "$FOUND" ]; then
-      echo "❌ Potential secrets found in staged changes!"
-      echo "$FOUND" | head -5
-      echo ""
-      echo "   Install gitleaks for better detection: brew install gitleaks"
-      exit 1
-    fi
-  fi
-  echo "  ✓ Basic scan OK (install gitleaks for better detection)"
+if ! command -v gitleaks &> /dev/null; then
+  echo ""
+  echo "❌ gitleaks is required but not installed"
+  echo ""
+  echo "   Install with: brew install gitleaks"
+  echo "   Or see: https://github.com/gitleaks/gitleaks#installing"
+  exit 1
 fi
+
+# Scan only staged changes (fast, catches secrets before they enter history)
+if ! gitleaks protect --staged --redact --no-banner 2>/dev/null; then
+  echo ""
+  echo "❌ SECRETS DETECTED in staged files!"
+  echo ""
+  echo "   Remove the secret and use environment variables instead."
+  echo "   If this is a false positive, add to .gitleaks.toml allowlist."
+  exit 1
+fi
+echo "  ✓ No secrets found"
 echo ""
 
 # 2. Type checking (blocking)
