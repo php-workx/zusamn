@@ -122,8 +122,8 @@ export async function redeemInvite(inviteId: string, userId: string): Promise<Re
     const inviteData = inviteSnapshot.data();
     const now = Timestamp.now().toMillis();
 
-    // Step 2: Validate invite is not already used
-    if (inviteData.usedBy !== null) {
+    // Step 2: Validate invite is not already used (treat both null and undefined as unused)
+    if (inviteData.usedBy != null) {
       return {
         success: false as const,
         reason: 'invite_already_used' as const,

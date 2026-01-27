@@ -11,10 +11,8 @@ import { initFirebase } from '../client';
 import type { Item } from '@zusamn/domain';
 import { validateItemText, LIMITS } from '@zusamn/domain';
 
-/** Error thrown when list is at capacity */
+/** Error constant for list at capacity - used by mobile app for error checking */
 export const LIST_FULL_ERROR = 'LIST_FULL';
-/** Error thrown when itemCount is missing and can't be computed */
-export const LIST_COUNT_MISSING_ERROR = 'LIST_COUNT_MISSING';
 
 /**
  * Gets the Firestore database instance.
@@ -374,8 +372,15 @@ export async function bulkUndelete(listId: string, itemIds: string[]): Promise<v
       });
     }
 
+    // Use same fallback logic as bulkSoftDelete for consistency
     const listData = listSnapshot.data();
-    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      currentCount = await getItemCount(listId);
+    }
 
     if (currentCount + restoredCount > LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(

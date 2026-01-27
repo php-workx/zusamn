@@ -113,8 +113,12 @@ export function useUser(
                 email: data.email ?? '',
                 avatarUrl: data.avatarUrl ?? null,
                 locale: data.locale ?? 'en',
-                createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
-                deletedAt: data.deletedAt?.toMillis?.() ?? data.deletedAt ?? null,
+                createdAt:
+                  data.createdAt?.toMillis?.() ??
+                  (typeof data.createdAt === 'number' ? data.createdAt : Date.now()),
+                deletedAt:
+                  data.deletedAt?.toMillis?.() ??
+                  (typeof data.deletedAt === 'number' ? data.deletedAt : null),
               };
               setState({ user, isLoading: false, error: null });
             } else {

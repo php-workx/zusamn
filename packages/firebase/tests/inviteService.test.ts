@@ -297,6 +297,24 @@ describe('inviteService', () => {
       });
       expect(transactionUpdateMock).toHaveBeenCalledTimes(2); // invite + list
       expect(transactionSetMock).toHaveBeenCalledTimes(1); // membership
+
+      // Verify invite update payload (marks invite as used)
+      const inviteUpdateCall = transactionUpdateMock.mock.calls.find(
+        (call) => (call[1] as { usedBy?: string })?.usedBy !== undefined
+      ) as unknown[];
+      expect(inviteUpdateCall).toBeTruthy();
+      expect(inviteUpdateCall[1]).toMatchObject({
+        usedBy: 'user-2',
+        usedAt: expect.any(Number),
+      });
+
+      // Verify membership set payload
+      const membershipSetCall = transactionSetMock.mock.calls[0] as unknown[];
+      expect(membershipSetCall[1]).toMatchObject({
+        userId: 'user-2',
+        listId: 'list-1',
+        alias: 'Shopping',
+      });
     });
   });
 });

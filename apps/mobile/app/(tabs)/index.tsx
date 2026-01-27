@@ -288,6 +288,9 @@ export default function ListDetailScreen() {
     } catch (error) {
       // Restore input on error
       setInputValue(text);
+      // Show error feedback to user
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Unable to add item', `Something went wrong: ${message}`);
     }
   }, [inputValue, listId, user?.uid, markWritePending, list?.itemCount]);
 
