@@ -20,16 +20,15 @@ WARNINGS=""
 
 # Helper to run command and show last N lines
 run_gate() {
-  local name="$1"
-  local cmd="$2"
-  local lines="${3:-10}"
+  local cmd="$1"
+  local lines="${2:-10}"
 
   local output
   local exit_code=0
 
   output=$(eval "$cmd" 2>&1) || exit_code=$?
 
-  # Show last N lines (name is used for context in caller's output)
+  # Show last N lines
   echo "$output" | tail -n "$lines"
 
   return $exit_code
@@ -60,7 +59,7 @@ echo ""
 
 # 2. Type checking (blocking)
 echo "→ [2/6] Type checking..."
-if ! run_gate "typecheck" "pnpm typecheck" 5; then
+if ! run_gate "pnpm typecheck" 5; then
   echo "❌ Type check failed"
   exit 1
 fi
@@ -69,7 +68,7 @@ echo ""
 
 # 3. Lint (blocking)
 echo "→ [3/6] Linting..."
-if ! run_gate "lint" "pnpm lint" 5; then
+if ! run_gate "pnpm lint" 5; then
   echo "❌ Lint failed"
   exit 1
 fi
@@ -78,7 +77,7 @@ echo ""
 
 # 4. Fast unit tests (blocking)
 echo "→ [4/6] Running fast tests..."
-if ! run_gate "test" "pnpm test:unit" 15; then
+if ! run_gate "pnpm test:unit" 15; then
   echo ""
   echo "❌ Unit tests failed"
   exit 1

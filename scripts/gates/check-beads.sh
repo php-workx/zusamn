@@ -34,7 +34,7 @@ if [ -z "$PHASE_NUM" ]; then
   echo "   Checking all open tasks instead..."
 
   # Show open tasks as warning
-  OPEN_TASKS=$(bd list --status=open 2>/dev/null | grep -v "epic" | head -10 || true)
+  OPEN_TASKS=$(bd list --status=open 2>/dev/null | grep -vi "epic" | head -10 || true)
   if [ -n "$OPEN_TASKS" ]; then
     echo ""
     echo "Open tasks:"
@@ -56,7 +56,7 @@ echo "Looking for open tasks matching: $PHASE_PATTERN.*"
 echo ""
 
 # Get open tasks for this phase (excluding the epic itself)
-OPEN_PHASE_TASKS=$(bd list --status=open 2>/dev/null | grep "$PHASE_PATTERN\." | grep -v "\[epic\]" || true)
+OPEN_PHASE_TASKS=$(bd list --status=open 2>/dev/null | grep "$PHASE_PATTERN\." | grep -vi "\[epic\]" || true)
 
 if [ -n "$OPEN_PHASE_TASKS" ]; then
   echo "❌ Open tasks found for Phase $PHASE_NUM:"

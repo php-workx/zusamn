@@ -168,6 +168,8 @@ if [ -n "$A11Y_ISSUES" ]; then
   NEEDS_REVIEW=1
 fi
 
+# NOTE: This script is advisory-only and always exits 0.
+# It flags issues for manual/AI review but does not block commits.
 if [ $NEEDS_REVIEW -eq 1 ]; then
   echo ""
   echo "  NEEDS REVIEW - Address warnings above"

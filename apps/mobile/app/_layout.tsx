@@ -20,7 +20,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading, needsDisplayName } = useAuthContext();
   const segments = useSegments() as string[];
   const router = useRouter();
-  const { getPendingInvite, clearPendingInvite } = usePendingInvite();
+  const { getPendingInvite } = usePendingInvite();
 
   // Track if we've already handled a pending invite this session
   const pendingInviteHandled = useRef(false);
@@ -70,7 +70,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         router.replace('/(tabs)');
       }
     }
-  }, [user, isLoading, needsDisplayName, segments, router, getPendingInvite, clearPendingInvite]);
+  }, [user, isLoading, needsDisplayName, segments, router, getPendingInvite]);
 
   return <>{children}</>;
 }

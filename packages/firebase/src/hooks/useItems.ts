@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { collection, query, where, orderBy, onSnapshot, type Firestore } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import type { Item } from '@zusamn/domain';
-import { initFirebase } from '../client';
+import { getFirestoreDb } from '../db';
 
 export interface UseItemsReturn {
   items: Item[];
@@ -9,14 +9,6 @@ export interface UseItemsReturn {
   error: Error | null;
   /** IDs of items that were added or modified by remote users (not local writes) */
   remotelyChangedIds: string[];
-}
-
-/**
- * Get the Firestore instance
- */
-function getFirestoreDb(): Firestore {
-  const { db } = initFirebase();
-  return db;
 }
 
 /**
