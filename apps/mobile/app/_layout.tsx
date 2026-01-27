@@ -22,8 +22,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { getPendingInvite } = usePendingInvite();
 
-  // Track if we've already handled a pending invite this session
-  const pendingInviteHandled = useRef(false);
+  // Track the last handled invite token to allow new tokens within same session
+  const lastHandledInviteToken = useRef<string | null>(null);
 
   useEffect(() => {
     // Don't redirect while loading auth state
@@ -54,15 +54,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     } else {
       // User is fully authenticated
       // Check for pending invite (from pre-auth invite link)
-      if (!pendingInviteHandled.current) {
-        const pendingToken = getPendingInvite();
-        if (pendingToken) {
-          pendingInviteHandled.current = true;
-          // Navigate first; clear token only after successful navigation
-          // The invite screen will clear the pending invite after handling
-          router.replace(`/invite/${pendingToken}`);
-          return;
-        }
+      const pendingToken = getPendingInvite();
+      if (pendingToken && lastHandledInviteToken.current !== pendingToken) {
+        lastHandledInviteToken.current = pendingToken;
+        // Navigate first; clear token only after successful navigation
+        // The invite screen will clear the pending invite after handling
+        router.replace(`/invite/${pendingToken}`);
+        return;
       }
 
       // Redirect to tabs if in auth group (login/display-name completed)

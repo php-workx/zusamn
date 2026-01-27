@@ -38,7 +38,8 @@ beforeEach(() => {
         set: typeof transactionSetMock;
       }) => Promise<void>
     ) => {
-      await callback({
+      // Return the callback result like Firebase's runTransaction does
+      return callback({
         get: transactionGetMock,
         set: transactionSetMock,
       });
@@ -95,5 +96,37 @@ describe('useUser', () => {
       expect(screen.getByTestId('state').textContent).toBe('Test User');
     });
     expect(transactionSetMock).toHaveBeenCalledTimes(1);
+    // Verify the user data passed to transaction.set
+    const setCallArgs = transactionSetMock.mock.calls[0] as unknown[];
+    expect(setCallArgs[1]).toMatchObject({
+      displayName: 'Test User',
+      email: 'test@example.com',
+    });
+  });
+
+  it('does not overwrite existing user doc', async () => {
+    transactionGetMock.mockResolvedValueOnce({ exists: () => true });
+    onSnapshotMock.mockImplementation((_ref, onNext) => {
+      onNext({
+        exists: () => true,
+        id: 'user-1',
+        data: () => ({
+          displayName: 'Existing User',
+          email: 'existing@example.com',
+          avatarUrl: null,
+          locale: 'en',
+          createdAt: { toMillis: () => 123 },
+          deletedAt: null,
+        }),
+      });
+      return vi.fn();
+    });
+
+    render(React.createElement(TestComponent, { userId: 'user-1' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('state').textContent).toBe('Existing User');
+    });
+    expect(transactionSetMock).not.toHaveBeenCalled();
   });
 });

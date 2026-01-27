@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MAX_MEMBERS_PER_LIST } from '@zusamn/domain';
 
 const getDocMock = vi.fn();
+const setDocMock = vi.fn();
 const runTransactionMock = vi.fn();
 const transactionGetMock = vi.fn();
 const transactionSetMock = vi.fn();
@@ -16,6 +18,7 @@ vi.mock('../src/client', () => ({
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => docMock(...args),
   getDoc: (...args: unknown[]) => getDocMock(...args),
+  setDoc: (...args: unknown[]) => setDocMock(...args),
   runTransaction: (...args: unknown[]) => runTransactionMock(...args),
   Timestamp: { now: () => ({ toMillis: () => timestampNowMock() }) },
   arrayUnion: (...args: unknown[]) => arrayUnionMock(...args),
@@ -28,6 +31,7 @@ const loadInviteService = async () => {
 
 beforeEach(() => {
   getDocMock.mockReset();
+  setDocMock.mockReset();
   runTransactionMock.mockReset();
   transactionGetMock.mockReset();
   transactionSetMock.mockReset();
@@ -35,6 +39,8 @@ beforeEach(() => {
   docMock.mockReset();
   timestampNowMock.mockReset();
   arrayUnionMock.mockReset();
+
+  setDocMock.mockResolvedValue(undefined);
 
   docMock.mockImplementation((...args: unknown[]) => {
     const pathSegments = args.slice(1) as string[];
@@ -76,18 +82,18 @@ describe('inviteService', () => {
       const inviteId = await generateInvite('list-1', 'Shopping', 'user-1');
 
       expect(inviteId).toBe('invite-1');
-      expect(transactionSetMock).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          listId: 'list-1',
-          inviteAlias: 'Shopping',
-          createdByUserId: 'user-1',
-          createdAt: 1000000000000,
-          expiresAt: 1000000000000 + 7 * 24 * 60 * 60 * 1000,
-          usedBy: null,
-          usedAt: null,
-        })
-      );
+      // Verify setDoc was called with invite data (not using transaction for single write)
+      expect(setDocMock).toHaveBeenCalledTimes(1);
+      const setDocCallArgs = setDocMock.mock.calls[0] as unknown[];
+      expect(setDocCallArgs[1]).toMatchObject({
+        listId: 'list-1',
+        inviteAlias: 'Shopping',
+        createdByUserId: 'user-1',
+        createdAt: 1000000000000,
+        expiresAt: 1000000000000 + 7 * 24 * 60 * 60 * 1000,
+        usedBy: null,
+        usedAt: null,
+      });
     });
   });
 
@@ -251,7 +257,8 @@ describe('inviteService', () => {
         .mockResolvedValueOnce({
           exists: () => true,
           data: () => ({
-            memberIds: ['user-1', 'user-3', 'user-4'], // MAX_MEMBERS_PER_LIST = 3
+            // Use user IDs that don't include the redeeming user (user-2)
+            memberIds: Array.from({ length: MAX_MEMBERS_PER_LIST }, (_, i) => `user-${i + 10}`),
           }),
         });
 

@@ -13,6 +13,7 @@ import {
   type RedeemInviteResult,
 } from '@zusamn/firebase';
 import type { Invite, User } from '@zusamn/domain';
+import { MAX_MEMBERS_PER_LIST } from '@zusamn/domain';
 
 type InviteState =
   | { status: 'loading' }
@@ -713,7 +714,7 @@ export default function InvitePage() {
           </YStack>
           <RedemptionErrorCard
             title="List is Full"
-            message="This list has reached its maximum of 3 people."
+            message={`This list has reached its maximum of ${MAX_MEMBERS_PER_LIST} people.`}
           />
         </YStack>
       </Screen>

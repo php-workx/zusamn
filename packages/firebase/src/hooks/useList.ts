@@ -1,20 +1,12 @@
 import { useEffect, useState } from 'react';
-import { doc, onSnapshot, type Firestore } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import type { List } from '@zusamn/domain';
-import { initFirebase } from '../client';
+import { getFirestoreDb } from '../db';
 
 export interface UseListReturn {
   list: List | null;
   isLoading: boolean;
   error: Error | null;
-}
-
-/**
- * Get the Firestore instance
- */
-function getFirestoreDb(): Firestore {
-  const { db } = initFirebase();
-  return db;
 }
 
 /**
@@ -42,6 +34,9 @@ export function useList(listId: string | null | undefined): UseListReturn {
       setState({ list: null, isLoading: false, error: null });
       return;
     }
+
+    // Reset to loading state when listId changes to avoid stale data
+    setState({ list: null, isLoading: true, error: null });
 
     const db = getFirestoreDb();
     const listRef = doc(db, 'lists', listId);

@@ -1,4 +1,4 @@
-import { doc, getDoc, runTransaction, Timestamp, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, runTransaction, Timestamp, arrayUnion } from 'firebase/firestore';
 import { initFirebase } from '../client';
 import { generateUUID } from '../utils';
 import type { Invite, Membership } from '@zusamn/domain';
@@ -60,9 +60,8 @@ export async function generateInvite(
 
   const inviteRef = doc(db, 'invites', inviteId);
 
-  await runTransaction(db, async (transaction) => {
-    transaction.set(inviteRef, inviteData);
-  });
+  // Single write operation - no need for transaction overhead
+  await setDoc(inviteRef, inviteData);
 
   return inviteId;
 }
@@ -170,10 +169,7 @@ export async function redeemInvite(inviteId: string, userId: string): Promise<Re
 
     // Step 9: Create membership document
     const membershipRef = doc(db, 'lists', inviteData.listId, 'memberships', userId);
-    const membership: Omit<Membership, 'userId' | 'listId'> & {
-      userId: string;
-      listId: string;
-    } = {
+    const membership: Membership = {
       userId,
       listId: inviteData.listId,
       alias: inviteData.inviteAlias,

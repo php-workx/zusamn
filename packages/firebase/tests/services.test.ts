@@ -46,6 +46,7 @@ describe('listService', () => {
     firestoreMocks.setMock.mockClear();
     firestoreMocks.commitMock.mockClear();
     firestoreMocks.docMock.mockClear();
+    firestoreMocks.writeBatchMock.mockClear();
   });
 
   it('FR-AUTH-003, FR-AUTH-004: creates a personal list and membership with defaults', async () => {
@@ -61,6 +62,7 @@ describe('listService', () => {
 
     expect(firestoreMocks.writeBatchMock).toHaveBeenCalledTimes(1);
     expect(firestoreMocks.setMock).toHaveBeenCalledTimes(2);
+    expect(firestoreMocks.commitMock).toHaveBeenCalledTimes(1);
 
     const listCall = firestoreMocks.setMock.mock.calls.find(
       (call) => call[0]?.path === `lists/${result.list.id}`

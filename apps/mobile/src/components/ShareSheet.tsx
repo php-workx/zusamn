@@ -11,7 +11,7 @@ import {
   XStack,
 } from '@zusamn/ui';
 import { generateInvite } from '@zusamn/firebase';
-import { MAX_ALIAS_LENGTH, MAX_MEMBERS_PER_LIST } from '@zusamn/domain';
+import { MAX_ALIAS_LENGTH, MAX_MEMBERS_PER_LIST, LIMITS } from '@zusamn/domain';
 import type { List, User, Locale } from '@zusamn/domain';
 
 export interface ShareSheetProps {
@@ -79,8 +79,9 @@ export function ShareSheet({
       // Generate invite link
       const inviteId = await generateInvite(list.id, shareName.trim(), currentUser.id);
 
-      // Construct the invite URL
-      const inviteUrl = `https://zusamn.com/invite/${inviteId}`;
+      // Construct the invite URL (use env for staging/future domain changes)
+      const baseUrl = process.env.EXPO_PUBLIC_WEB_URL ?? 'https://zusamn.com';
+      const inviteUrl = `${baseUrl}/invite/${inviteId}`;
 
       // Open OS share sheet
       const result = await Share.share({
@@ -108,7 +109,7 @@ export function ShareSheet({
         <YStack gap="$4">
           {/* Explanation */}
           <Text fontSize="$2" color="$textMuted" textAlign="center">
-            This list is full (maximum 3 people)
+            This list is full (maximum {MAX_MEMBERS_PER_LIST} people)
           </Text>
 
           <Separator />
@@ -160,7 +161,7 @@ export function ShareSheet({
         {/* Expiry notice */}
         <XStack backgroundColor="$surface" padding="$3" borderRadius="$1" justifyContent="center">
           <Text fontSize="$1" color="$textMuted" textAlign="center">
-            Link expires in 7 days
+            Link expires in {LIMITS.INVITE_EXPIRY_DAYS} days
           </Text>
         </XStack>
 
