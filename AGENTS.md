@@ -6,37 +6,42 @@
 - No secrets or real Firebase config in code or docs; use env vars and `.env.example` only.
 - UI must use Tamagui components and the shared `@zusamn/ui` provider.
 - Cloud Functions live in `firebase/functions`; Firestore rules in `firebase/firestore.rules`.
-- Run `pnpm lint`, `pnpm typecheck`, and `pnpm test` before finalizing changes.
+## Quality Gates
+
+Before finalizing any work, run:
+
+```bash
+pnpm gate:commit    # Fast checks (typecheck, lint, tests, secrets)
+pnpm gate:push      # Full checks (coverage, build, secrets, constitution, spec)
+```
+
+**CRITICAL**: Agents MUST run `pnpm gate:push` and fix ALL issues before considering work complete. Do NOT leave failing gates for the user to fix.
 
 ## Landing the Plane (Session Completion)
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+**When ending a work session**, you MUST complete ALL steps below.
 
 **MANDATORY WORKFLOW:**
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
+1. **Run quality gates** - `pnpm gate:push` must pass with no errors
+2. **Fix any issues** - If gates fail, fix and re-run until they pass
+3. **File issues for remaining work** - Create issues for anything that needs follow-up
+4. **Update issue status** - Close finished work, update in-progress items
+5. **Commit changes** - All changes must be committed locally
+6. **Sync beads** - `bd sync --from-main` (for ephemeral branches)
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
+- NEVER push to remote - the user will push when ready
 - NEVER commit directly to main
 - ALL pre-commit hooks MUST pass before committing
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-Use 'bd' for task tracking
+- ALL gate:push checks MUST pass before considering work complete
+- Work is NOT complete until gates pass AND changes are committed
+- NEVER stop before committing - that leaves work stranded locally
+- NEVER say "ready to commit when you are" - YOU must commit
+- If gates or commits fail, resolve and retry until they succeed
 
+Use 'bd' for task tracking.
 
 <!-- BEGIN BEADS INTEGRATION -->
 ## Issue Tracking with bd (beads)
