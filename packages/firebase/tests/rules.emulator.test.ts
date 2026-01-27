@@ -144,7 +144,7 @@ describe('User documents (/users/{userId})', () => {
 // LIST DOCUMENT TESTS
 // ============================================
 describe('List documents (/lists/{listId})', () => {
-  it('user can create a list with themselves as the only member', async () => {
+  it('FR-AUTH-003: user can create a list with themselves as the only member', async () => {
     const userId = 'user1';
     const listId = 'list1';
 
@@ -256,7 +256,7 @@ describe('List documents (/lists/{listId})', () => {
     );
   });
 
-  it('member can update list to have exactly 3 members', async () => {
+  it('FR-SHARE-007: member can update list to have exactly 3 members', async () => {
     const userId = 'user1';
     const listId = 'list1';
 
@@ -281,7 +281,7 @@ describe('List documents (/lists/{listId})', () => {
     );
   });
 
-  it('member cannot update list to have more than 3 members', async () => {
+  it('FR-SHARE-007: member cannot update list to have more than 3 members', async () => {
     const userId = 'user1';
     const listId = 'list1';
 
@@ -347,7 +347,7 @@ describe('List items (/lists/{listId}/items/{itemId})', () => {
     });
   };
 
-  it('member can create an item with text up to 100 chars', async () => {
+  it('FR-LIST-003, FR-LIST-022: member can create an item with text up to 100 chars', async () => {
     const userId = 'user1';
     const listId = 'list1';
     const itemId = 'item1';
@@ -377,7 +377,7 @@ describe('List items (/lists/{listId}/items/{itemId})', () => {
     );
   });
 
-  it('member cannot create an item with text over 100 chars', async () => {
+  it('FR-LIST-022: member cannot create an item with text over 100 chars', async () => {
     const userId = 'user1';
     const listId = 'list1';
     const itemId = 'item1';
@@ -448,7 +448,7 @@ describe('List items (/lists/{listId}/items/{itemId})', () => {
     );
   });
 
-  it('member can update non-deleted item', async () => {
+  it('FR-LIST-004: member can update non-deleted item', async () => {
     const userId = 'user1';
     const listId = 'list1';
     const itemId = 'item1';
@@ -473,7 +473,7 @@ describe('List items (/lists/{listId}/items/{itemId})', () => {
     );
   });
 
-  it('member can mark item as deleted (soft delete)', async () => {
+  it('FR-LIST-006: member can mark item as deleted (soft delete)', async () => {
     const userId = 'user1';
     const listId = 'list1';
     const itemId = 'item1';
@@ -526,7 +526,7 @@ describe('List items (/lists/{listId}/items/{itemId})', () => {
     );
   });
 
-  it('member can undelete a deleted item', async () => {
+  it('FR-LIST-007: member can undelete a deleted item', async () => {
     const userId = 'user1';
     const listId = 'list1';
     const itemId = 'item1';
@@ -621,7 +621,7 @@ describe('Invites (/invites/{inviteId})', () => {
     await assertFails(getDoc(doc(unauthDb, 'invites', inviteId)));
   });
 
-  it('member of a list can create an invite', async () => {
+  it('FR-SHARE-003, FR-SHARE-010: member of a list can create an invite', async () => {
     const userId = 'user1';
     const listId = 'list1';
     const inviteId = 'invite1';
@@ -740,7 +740,7 @@ describe('Invites (/invites/{inviteId})', () => {
     );
   });
 
-  it('user cannot claim an already-used invite (one-time use)', async () => {
+  it('FR-SHARE-006: user cannot claim an already-used invite (one-time use)', async () => {
     const claimerId = 'user3';
     const inviteId = 'invite1';
 
@@ -769,7 +769,7 @@ describe('Invites (/invites/{inviteId})', () => {
     );
   });
 
-  it('user cannot claim an expired invite', async () => {
+  it('FR-SHARE-005: user cannot claim an expired invite', async () => {
     const claimerId = 'user2';
     const inviteId = 'invite1';
 
@@ -856,7 +856,7 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
     );
   });
 
-  it('member can update their own alias', async () => {
+  it('FR-SWITCH-007: member can update their own alias', async () => {
     const userId = 'user1';
     const listId = 'list1';
 
@@ -884,7 +884,7 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
     );
   });
 
-  it('member cannot update their alias to over 50 chars', async () => {
+  it('FR-SWITCH-009: member cannot update their alias to over 50 chars', async () => {
     const userId = 'user1';
     const listId = 'list1';
 
@@ -912,7 +912,7 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
     );
   });
 
-  it('member can delete their own membership (leave list)', async () => {
+  it('FR-LIST-028: member can delete their own membership (leave list)', async () => {
     const userId = 'user1';
     const listId = 'list1';
 

@@ -31,6 +31,7 @@ vi.mock('../src/client', () => ({
 
 import { deleteAccount } from '../src/services/accountService';
 
+// FR-ACCT-005: Delete Account functionality
 describe('accountService deleteAccount', () => {
   beforeEach(() => {
     authMocks.deleteUserMock.mockReset();

@@ -48,7 +48,7 @@ describe('listService', () => {
     firestoreMocks.docMock.mockClear();
   });
 
-  it('creates a personal list and membership with defaults', async () => {
+  it('FR-AUTH-003, FR-AUTH-004: creates a personal list and membership with defaults', async () => {
     const result = await createPersonalList('user-123', 'en');
 
     expect(result.list.ownerUserId).toBe('user-123');
