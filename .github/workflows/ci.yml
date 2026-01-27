@@ -23,26 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=high
+      - uses: ./.github/actions/setup
+      - run: pnpm audit --audit-level=high
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - run: pnpm lint
 
   format:
@@ -50,12 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - run: pnpm format:check
 
   typecheck:
@@ -63,12 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - run: pnpm typecheck
 
   test:
@@ -76,12 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - name: Run tests with coverage
         run: pnpm test:coverage
       - name: Check coverage thresholds
@@ -104,12 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - run: pnpm build
 
   functions:
@@ -117,10 +86,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - run: pnpm --filter @zusamn/functions typecheck
