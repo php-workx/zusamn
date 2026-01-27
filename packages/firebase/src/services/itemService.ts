@@ -79,8 +79,12 @@ export async function addItem(
     throw new Error(validation.error);
   }
 
-  // Generate UUIDv4 for the item
-  const itemId = crypto.randomUUID();
+  const db = getDb();
+  const listRef = getListRef(listId);
+
+  // Use Firestore auto-generated ID (works in all environments including React Native)
+  const itemRef = doc(collection(db, 'lists', listId, 'items'));
+  const itemId = itemRef.id;
 
   // Prepare the item data with server timestamps
   const itemData = {
@@ -92,10 +96,6 @@ export async function addItem(
     serverCreatedAt: serverTimestamp(),
     serverUpdatedAt: serverTimestamp(),
   };
-
-  const db = getDb();
-  const listRef = getListRef(listId);
-  const itemRef = getItemRef(listId, itemId);
 
   await runTransaction(db, async (transaction) => {
     const listSnapshot = await transaction.get(listRef);
@@ -274,7 +274,9 @@ export async function bulkSoftDelete(
   listId: string,
   itemIds: string[]
 ): Promise<void> {
-  if (itemIds.length === 0) {
+  // Prefilter and deduplicate itemIds to prevent duplicate reads/decrements
+  const cleanedIds = [...new Set(itemIds.filter((id) => id?.trim()))];
+  if (cleanedIds.length === 0) {
     return;
   }
 
@@ -288,15 +290,14 @@ export async function bulkSoftDelete(
     }
 
     const itemSnapshots = await Promise.all(
-      itemIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
+      cleanedIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
     );
 
     let actualDeletedCount = 0;
     for (const [index, snapshot] of itemSnapshots.entries()) {
-      const itemId = itemIds[index];
-      if (!itemId) {
-        continue;
-      }
+      // cleanedIds[index] is guaranteed to exist since we iterate over itemSnapshots
+      // which was created from cleanedIds with same length
+      const itemId = cleanedIds[index] as string;
 
       if (!snapshot.exists()) {
         continue;
@@ -335,7 +336,9 @@ export async function bulkUndelete(
   listId: string,
   itemIds: string[]
 ): Promise<void> {
-  if (itemIds.length === 0) {
+  // Prefilter and deduplicate itemIds to prevent duplicate reads/increments
+  const cleanedIds = [...new Set(itemIds.filter((id) => id?.trim()))];
+  if (cleanedIds.length === 0) {
     return;
   }
 
@@ -349,15 +352,14 @@ export async function bulkUndelete(
     }
 
     const itemSnapshots = await Promise.all(
-      itemIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
+      cleanedIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
     );
 
     let restoredCount = 0;
     for (const [index, snapshot] of itemSnapshots.entries()) {
-      const itemId = itemIds[index];
-      if (!itemId) {
-        continue;
-      }
+      // cleanedIds[index] is guaranteed to exist since we iterate over itemSnapshots
+      // which was created from cleanedIds with same length
+      const itemId = cleanedIds[index] as string;
 
       if (!snapshot.exists()) {
         continue;

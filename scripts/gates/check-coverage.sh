@@ -27,7 +27,13 @@ COVERAGE_FILE="coverage/coverage-summary.json"
 if [ ! -f "$COVERAGE_FILE" ]; then
   echo "⚠️  No coverage summary found at $COVERAGE_FILE"
   echo "   Run 'pnpm test:coverage' first"
-  exit 0  # Don't fail if no coverage yet
+  # In CI, missing coverage file is a failure (prevents bypassing the gate)
+  # Locally, allow skipping for development convenience
+  if [ -n "$CI" ] || [ -n "$STRICT_COVERAGE" ]; then
+    echo "❌ Coverage file required in CI environment"
+    exit 1
+  fi
+  exit 0
 fi
 
 # Parse coverage from JSON

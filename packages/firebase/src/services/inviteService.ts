@@ -6,6 +6,7 @@ import {
   arrayUnion,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
+import { generateUUID } from '../utils';
 import type { Invite, Membership } from '@zusamn/domain';
 import { INVITE_EXPIRY_DAYS, MAX_MEMBERS_PER_LIST } from '@zusamn/domain';
 
@@ -24,14 +25,6 @@ export type RedeemInviteResult =
         | 'list_full'
         | 'already_member';
     };
-
-/**
- * Generates a cryptographically secure UUIDv4.
- * Uses the Web Crypto API which is available in modern browsers and Node.js 19+.
- */
-function generateUUID(): string {
-  return crypto.randomUUID();
-}
 
 /**
  * Gets the Firestore database instance.

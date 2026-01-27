@@ -2,7 +2,7 @@
 # Pre-push quality gates - thorough checks (<5min)
 # Run before pushing to ensure code meets all quality standards
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -63,8 +63,9 @@ echo ""
 
 # 5. Security audit (blocking for high/critical)
 echo "→ [5/7] Security audit..."
-AUDIT_OUTPUT=$(pnpm audit --audit-level=high 2>&1) || true
-if echo "$AUDIT_OUTPUT" | grep -q "critical\|high"; then
+AUDIT_EXIT=0
+AUDIT_OUTPUT=$(pnpm audit --audit-level=high 2>&1) || AUDIT_EXIT=$?
+if [ $AUDIT_EXIT -ne 0 ]; then
   echo "❌ Critical/high security vulnerabilities found"
   echo "$AUDIT_OUTPUT" | tail -20
   exit 1

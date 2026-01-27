@@ -16,13 +16,17 @@ paths = [
   '''package-lock\.json''',
 ]
 
-# Regex patterns to ignore (e.g., example/test values)
+# Regex patterns to ignore (anchored to avoid masking real secrets)
 regexes = [
-  '''example''',
-  '''test''',
-  '''dummy''',
-  '''placeholder''',
-  '''YOUR_.*_HERE''',
+  # Only match explicit placeholder patterns, not substrings
+  '''^example[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''^test[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''^dummy[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''^placeholder[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''YOUR_[A-Z_]+_HERE''',
+  # Firebase emulator/test values
+  '''demo-project''',
+  '''test-project''',
 ]
 
 # Additional rules can be added here

@@ -10,6 +10,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
+import { generateUUID } from '../utils';
 import type { List, Membership, Locale } from '@zusamn/domain';
 
 /**
@@ -17,14 +18,6 @@ import type { List, Membership, Locale } from '@zusamn/domain';
  */
 function getDefaultAlias(locale: Locale): string {
   return locale === 'de' ? 'Einkaufen' : 'Shopping';
-}
-
-/**
- * Generates a cryptographically secure UUIDv4.
- * Uses the Web Crypto API which is available in modern browsers and Node.js 19+.
- */
-function generateUUID(): string {
-  return crypto.randomUUID();
 }
 
 /**

@@ -89,7 +89,15 @@ export async function deleteAccount(userId: string): Promise<void> {
     throw new Error('No authenticated user');
   }
 
-  // Mark user as deleted in Firestore first
+  // Validate that the requested userId matches the authenticated user
+  // to prevent accidental or malicious mismatched deletions
+  if (currentUser.uid !== userId) {
+    throw new Error(
+      `User ID mismatch: authenticated as ${currentUser.uid} but requested to delete ${userId}`
+    );
+  }
+
+  // Delete user data from Firestore first
   await deleteAccountWithDb(db, currentUser.uid);
 
   try {
