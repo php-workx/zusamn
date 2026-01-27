@@ -99,18 +99,21 @@ describe('itemService', () => {
     );
   });
 
-  it('addItem defaults itemCount to 0 when missing', async () => {
+  it('addItem computes count from query when itemCount missing', async () => {
     const { addItem } = await loadItemService();
     transactionGetMock.mockResolvedValueOnce({
       exists: () => true,
-      data: () => ({}), // No itemCount
+      data: () => ({}), // No itemCount - triggers fallback count query
     });
+    // Mock getItemCount to return 0 (fallback count query)
+    getDocsMock.mockResolvedValueOnce({ size: 0 });
 
     const item = await addItem('list-1', 'Milk', 'user-1');
 
     expect(item.id).toBe('item-1');
+    expect(getDocsMock).toHaveBeenCalledTimes(1); // Fallback count query was called
     expect(transactionUpdateMock).toHaveBeenCalledWith(expect.anything(), {
-      itemCount: 1, // Should increment from 0 to 1
+      itemCount: 1, // Should increment from computed 0 to 1
     });
   });
 

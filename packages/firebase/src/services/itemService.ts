@@ -100,7 +100,15 @@ export async function addItem(listId: string, text: string, userId: string): Pro
     }
 
     const listData = listSnapshot.data();
-    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      // This ensures the limit check is accurate even for legacy data
+      currentCount = await getItemCount(listId);
+    }
 
     if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(
@@ -248,7 +256,7 @@ export async function undeleteItem(listId: string, itemId: string): Promise<void
 }
 
 /**
- * Soft deletes multiple items atomically using a batch write.
+ * Soft deletes multiple items atomically using a Firestore transaction.
  * Used for the "Clear checked" feature.
  *
  * @param listId - The ID of the list containing the items
@@ -306,7 +314,7 @@ export async function bulkSoftDelete(listId: string, itemIds: string[]): Promise
 }
 
 /**
- * Restores multiple soft-deleted items atomically using a batch write.
+ * Restores multiple soft-deleted items atomically using a Firestore transaction.
  * Used for undo of "Clear checked" feature.
  *
  * @param listId - The ID of the list containing the items

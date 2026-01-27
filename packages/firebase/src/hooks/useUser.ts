@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
   doc,
-  getDoc,
-  setDoc,
   onSnapshot,
   serverTimestamp,
+  runTransaction,
   type Firestore,
   type FieldValue,
 } from 'firebase/firestore';
@@ -84,22 +83,25 @@ export function useUser(
 
     const initializeUser = async () => {
       try {
-        // Check if user document exists
-        const userSnap = await getDoc(userRef);
+        // Use transaction for atomic check-and-create to prevent race conditions
+        // when multiple clients try to create the same user simultaneously
+        await runTransaction(db, async (transaction) => {
+          const userSnap = await transaction.get(userRef);
 
-        if (!userSnap.exists()) {
-          // Create user document if it doesn't exist
-          const newUser = {
-            id: userId,
-            displayName: options?.displayName ?? '',
-            email: options?.email ?? '',
-            avatarUrl: null,
-            locale: detectLocale(),
-            createdAt: serverTimestamp(),
-          } satisfies Omit<User, 'createdAt'> & { createdAt: FieldValue };
+          if (!userSnap.exists()) {
+            // Create user document if it doesn't exist
+            const newUser = {
+              id: userId,
+              displayName: options?.displayName ?? '',
+              email: options?.email ?? '',
+              avatarUrl: null,
+              locale: detectLocale(),
+              createdAt: serverTimestamp(),
+            } satisfies Omit<User, 'createdAt'> & { createdAt: FieldValue };
 
-          await setDoc(userRef, newUser);
-        }
+            transaction.set(userRef, newUser);
+          }
+        });
 
         if (!mounted) return;
 

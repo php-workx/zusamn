@@ -104,29 +104,65 @@ echo ""
 
 NEEDS_REVIEW=0
 
+# Helper function to safely grep files (handles spaces in paths)
+# Usage: safe_grep_files "pattern" "$SOURCE_FILES"
+safe_grep_files() {
+  local pattern="$1"
+  local files="$2"
+  local results=""
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    if grep -lE "$pattern" "$file" 2>/dev/null; then
+      results="$results $file"
+    fi
+  done <<< "$files"
+  echo "$results" | xargs
+}
+
 # Check for console.log (often indicates debugging leftovers)
-CONSOLE_LOGS=$(echo "$SOURCE_FILES" | xargs grep -l "console\.log" 2>/dev/null || true)
+CONSOLE_LOGS=$(safe_grep_files "console\.log" "$SOURCE_FILES")
 if [ -n "$CONSOLE_LOGS" ]; then
   echo "  ⚠️  console.log found in: $CONSOLE_LOGS"
   NEEDS_REVIEW=1
 fi
 
 # Check for TODO/FIXME comments
-TODOS=$(echo "$SOURCE_FILES" | xargs grep -l "TODO\|FIXME\|XXX\|HACK" 2>/dev/null || true)
+TODOS=$(safe_grep_files "TODO|FIXME|XXX|HACK" "$SOURCE_FILES")
 if [ -n "$TODOS" ]; then
   echo "  ⚠️  TODO/FIXME comments in: $TODOS"
   NEEDS_REVIEW=1
 fi
 
 # Check for hardcoded strings that might need i18n
-HARDCODED=$(echo "$SOURCE_FILES" | xargs grep -lE "\"[A-Z][a-z]+ [a-z]+\"" 2>/dev/null | head -3 || true)
+HARDCODED=""
+count=0
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+  [ $count -ge 3 ] && break
+  if grep -lE "\"[A-Z][a-z]+ [a-z]+\"" "$file" 2>/dev/null; then
+    HARDCODED="$HARDCODED $file"
+    count=$((count + 1))
+  fi
+done <<< "$SOURCE_FILES"
+HARDCODED=$(echo "$HARDCODED" | xargs)
 if [ -n "$HARDCODED" ]; then
   echo "  ⚠️  Possible hardcoded strings (check i18n): $HARDCODED"
 fi
 
 # Check for accessibility issues (missing labels)
 # Note: This is a heuristic grep-based check that may miss issues where only some handlers lack labels
-A11Y_ISSUES=$(echo "$SOURCE_FILES" | xargs grep -lE "onPress=\{" 2>/dev/null | xargs grep -L "accessible\|accessibilityLabel" 2>/dev/null | head -3 || true)
+A11Y_ISSUES=""
+count=0
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+  [ $count -ge 3 ] && break
+  # Check if file has onPress but lacks accessibility attributes
+  if grep -lE "onPress=\{" "$file" 2>/dev/null && ! grep -lE "accessible|accessibilityLabel" "$file" 2>/dev/null; then
+    A11Y_ISSUES="$A11Y_ISSUES $file"
+    count=$((count + 1))
+  fi
+done <<< "$SOURCE_FILES"
+A11Y_ISSUES=$(echo "$A11Y_ISSUES" | xargs)
 if [ -n "$A11Y_ISSUES" ]; then
   echo "  ⚠️  Possible missing accessibility labels (heuristic check): $A11Y_ISSUES"
   NEEDS_REVIEW=1

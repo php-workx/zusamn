@@ -82,23 +82,32 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
           };
         });
 
-        // Detect remote changes using snapshot metadata
-        // hasPendingWrites === true means this is a local write that hasn't been confirmed
-        // hasPendingWrites === false means the data came from the server (could be our own write confirmed, or remote)
+        // Detect remote changes using per-document metadata from docChanges()
+        // This avoids skipping all docs when any single doc has pending writes
         const remotelyChangedIds: string[] = [];
 
         // Skip remote change detection on initial snapshot to avoid marking all items as new
-        if (!snapshot.metadata.hasPendingWrites && !isInitialSnapshotRef.current) {
+        if (!isInitialSnapshotRef.current) {
           const previousItems = previousItemsRef.current;
 
-          for (const item of items) {
-            const previousUpdatedAt = previousItems.get(item.id);
+          // Use docChanges() to check per-document hasPendingWrites
+          for (const change of snapshot.docChanges()) {
+            // Skip docs with pending local writes (not yet confirmed by server)
+            if (change.doc.metadata.hasPendingWrites) {
+              continue;
+            }
+
+            const docId = change.doc.id;
+            const data = change.doc.data();
+            const serverUpdatedAt =
+              data.serverUpdatedAt?.toMillis?.() ?? data.serverUpdatedAt ?? Date.now();
+            const previousUpdatedAt = previousItems.get(docId);
 
             // Item is remotely changed if:
             // 1. It's a new item (not in previous snapshot)
             // 2. It has a different serverUpdatedAt timestamp (was modified)
-            if (previousUpdatedAt === undefined || previousUpdatedAt !== item.serverUpdatedAt) {
-              remotelyChangedIds.push(item.id);
+            if (previousUpdatedAt === undefined || previousUpdatedAt !== serverUpdatedAt) {
+              remotelyChangedIds.push(docId);
             }
           }
         }

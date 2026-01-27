@@ -3,13 +3,15 @@
  *
  * Tries multiple UUID generation strategies in order of preference:
  * 1. Web Crypto API (modern browsers, Node.js 19+)
- * 2. expo-crypto (React Native/Expo)
- * 3. Fallback to uuid package (universal)
+ * 2. expo-crypto (React Native/Expo via dynamic require)
+ * 3. Fallback: Manual RFC 4122 v4 UUID generator using Math.random
  *
  * This ensures the function works across all environments:
  * - Browser (Web Crypto)
- * - Node.js (Web Crypto or uuid)
- * - React Native/Hermes (expo-crypto or uuid)
+ * - Node.js (Web Crypto or manual fallback)
+ * - React Native/Hermes (expo-crypto or manual fallback)
+ *
+ * Note: No external uuid package dependency is used.
  */
 export function generateUUID(): string {
   // Try Web Crypto API first (available in browsers and Node.js 19+)

@@ -70,6 +70,11 @@ export default function InviteScreen() {
   useEffect(() => {
     if (state.status === 'invalid') return;
     if (!token) return;
+    // Only fetch on initial load or when auth state changes
+    // Skip if we're already in a terminal state (error, success, redeeming)
+    if (state.status === 'error' || state.status === 'success' || state.status === 'redeeming') {
+      return;
+    }
 
     let active = true;
 
@@ -81,10 +86,11 @@ export default function InviteScreen() {
 
         if (!fetchedInvite) {
           clearPendingInvite(); // Clear to prevent retry loops
-          setState({
-            status: 'error',
-            message: getErrorMessage('invite_not_found'),
-          });
+          setState((prev) =>
+            prev.status === 'error'
+              ? prev
+              : { status: 'error', message: getErrorMessage('invite_not_found') }
+          );
           return;
         }
 
@@ -92,20 +98,22 @@ export default function InviteScreen() {
         const now = Date.now();
         if (fetchedInvite.expiresAt <= now) {
           clearPendingInvite(); // Clear to prevent retry loops
-          setState({
-            status: 'error',
-            message: getErrorMessage('invite_expired'),
-          });
+          setState((prev) =>
+            prev.status === 'error'
+              ? prev
+              : { status: 'error', message: getErrorMessage('invite_expired') }
+          );
           return;
         }
 
         // Check if already used
         if (fetchedInvite.usedBy !== null) {
           clearPendingInvite(); // Clear to prevent retry loops
-          setState({
-            status: 'error',
-            message: getErrorMessage('invite_already_used'),
-          });
+          setState((prev) =>
+            prev.status === 'error'
+              ? prev
+              : { status: 'error', message: getErrorMessage('invite_already_used') }
+          );
           return;
         }
 
@@ -118,20 +126,21 @@ export default function InviteScreen() {
 
         // Check if user needs to authenticate
         if (!user) {
-          setState({ status: 'needs_auth' });
+          setState((prev) => (prev.status === 'needs_auth' ? prev : { status: 'needs_auth' }));
           return;
         }
 
         // User is authenticated, proceed to redeem
-        setState({ status: 'redeeming' });
+        setState((prev) => (prev.status === 'redeeming' ? prev : { status: 'redeeming' }));
       } catch (error) {
         if (!active) return;
         console.error('Failed to fetch invite:', error);
         clearPendingInvite(); // Clear to prevent retry loops
-        setState({
-          status: 'error',
-          message: 'Failed to load invite. Please try again.',
-        });
+        setState((prev) =>
+          prev.status === 'error'
+            ? prev
+            : { status: 'error', message: 'Failed to load invite. Please try again.' }
+        );
       }
     }
 

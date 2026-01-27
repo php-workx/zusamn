@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { useUser } from '../src/hooks/useUser';
 
-const getDocMock = vi.fn();
-const setDocMock = vi.fn();
+const runTransactionMock = vi.fn();
+const transactionGetMock = vi.fn();
+const transactionSetMock = vi.fn();
 const onSnapshotMock = vi.fn();
 const docMock = vi.fn();
 const serverTimestampMock = vi.fn();
@@ -16,18 +17,33 @@ vi.mock('../src/client', () => ({
 
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => docMock(...args),
-  getDoc: (...args: unknown[]) => getDocMock(...args),
-  setDoc: (...args: unknown[]) => setDocMock(...args),
+  runTransaction: (...args: unknown[]) => runTransactionMock(...args),
   onSnapshot: (...args: unknown[]) => onSnapshotMock(...args),
   serverTimestamp: () => serverTimestampMock(),
 }));
 
 beforeEach(() => {
-  getDocMock.mockReset();
-  setDocMock.mockReset();
+  runTransactionMock.mockReset();
+  transactionGetMock.mockReset();
+  transactionSetMock.mockReset();
   onSnapshotMock.mockReset();
   docMock.mockReset();
   serverTimestampMock.mockReset();
+
+  runTransactionMock.mockImplementation(
+    async (
+      _db: unknown,
+      callback: (tx: {
+        get: typeof transactionGetMock;
+        set: typeof transactionSetMock;
+      }) => Promise<void>
+    ) => {
+      await callback({
+        get: transactionGetMock,
+        set: transactionSetMock,
+      });
+    }
+  );
 });
 
 afterEach(() => {
@@ -55,7 +71,7 @@ describe('useUser', () => {
   });
 
   it('creates user doc when missing and returns snapshot', async () => {
-    getDocMock.mockResolvedValueOnce({ exists: () => false });
+    transactionGetMock.mockResolvedValueOnce({ exists: () => false });
     serverTimestampMock.mockReturnValue('server-time');
     onSnapshotMock.mockImplementation((_ref, onNext) => {
       onNext({
@@ -78,6 +94,6 @@ describe('useUser', () => {
     await waitFor(() => {
       expect(screen.getByTestId('state').textContent).toBe('Test User');
     });
-    expect(setDocMock).toHaveBeenCalledTimes(1);
+    expect(transactionSetMock).toHaveBeenCalledTimes(1);
   });
 });
