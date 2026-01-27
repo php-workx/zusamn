@@ -1,0 +1,4 @@
+#!/bin/sh
+# Pre-commit hook - runs fast quality gates before each commit
+
+./scripts/gates/pre-commit.sh

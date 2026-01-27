@@ -6,6 +6,7 @@ import {
   type Unsubscribe,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   signInWithCredential,
+  signInWithPopup,
   signOut as firebaseSignOut,
   updateProfile,
 } from 'firebase/auth';
@@ -95,6 +96,30 @@ export async function signInWithApple(
 export async function signOut(): Promise<void> {
   const auth = getFirebaseAuth();
   await firebaseSignOut(auth);
+}
+
+/**
+ * Sign in with Google using a popup window.
+ * This is the preferred method for web applications.
+ */
+export async function signInWithGooglePopup(): Promise<AuthUser> {
+  const auth = getFirebaseAuth();
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  return toAuthUser(result.user);
+}
+
+/**
+ * Sign in with Apple using a popup window.
+ * This is the preferred method for web applications.
+ */
+export async function signInWithApplePopup(): Promise<AuthUser> {
+  const auth = getFirebaseAuth();
+  const provider = new OAuthProvider('apple.com');
+  provider.addScope('email');
+  provider.addScope('name');
+  const result = await signInWithPopup(auth, provider);
+  return toAuthUser(result.user);
 }
 
 /**

@@ -17,6 +17,10 @@ export interface FixedBottomInputProps {
   disabled?: boolean;
   /** Reference to input for programmatic focus */
   inputRef?: RefObject<TextInput>;
+  /** Called when input receives focus */
+  onFocus?: () => void;
+  /** Called when input loses focus */
+  onBlur?: () => void;
 }
 
 /**
@@ -32,6 +36,8 @@ export function FixedBottomInput({
   maxLength = 100,
   disabled = false,
   inputRef,
+  onFocus,
+  onBlur,
 }: FixedBottomInputProps) {
   const handleSubmit = () => {
     // Only submit if there's non-whitespace content
@@ -68,6 +74,8 @@ export function FixedBottomInput({
             maxLength={maxLength}
             disabled={disabled}
             onSubmitEditing={handleSubmit}
+            onFocus={onFocus}
+            onBlur={onBlur}
             returnKeyType="done"
             blurOnSubmit={false}
             flex={1}

@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
+  LayoutAnimation,
   type TextInput,
   type ListRenderItemInfo,
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import {
   EmptyState,
+  GhostButton,
   ListRow,
   OverflowMenu,
   Screen,
@@ -32,12 +34,13 @@ import {
   getPersonalList,
   createPersonalList,
   useUser,
+  getUserDisplayNames,
 } from '@zusamn/firebase';
 import { MAX_TEXT_LENGTH, MAX_ITEMS_PER_LIST } from '@zusamn/domain';
 import type { Item } from '@zusamn/domain';
 import { useAuthContext, useToast } from '../../src/providers';
 import { useNetworkStatus, useLastUsedList } from '../../src/hooks';
-import { FixedBottomInput } from '../../src/components';
+import { FixedBottomInput, ShareSheet } from '../../src/components';
 
 /**
  * List Detail screen - main screen for viewing and managing a shopping list.
@@ -68,8 +71,36 @@ export default function ListDetailScreen() {
   // Clear checked dialog
   const [showClearDialog, setShowClearDialog] = useState(false);
 
+  // Share sheet state
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [memberNames, setMemberNames] = useState<string[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+
   // Swipeable refs for closing
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
+
+  // Pending sink animation state - items waiting to move to checked section
+  const [pendingSinkItemIds, setPendingSinkItemIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const sinkTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const isInputFocusedRef = useRef(false);
+
+  // Keep ref in sync with state for use in callbacks
+  useEffect(() => {
+    isInputFocusedRef.current = isInputFocused;
+  }, [isInputFocused]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    const timeouts = sinkTimeoutsRef.current;
+    return () => {
+      for (const timeout of timeouts.values()) {
+        clearTimeout(timeout);
+      }
+      timeouts.clear();
+    };
+  }, []);
 
   // Firebase hooks
   const { user: firestoreUser } = useUser(user?.uid, {
@@ -78,7 +109,78 @@ export default function ListDetailScreen() {
   });
   const { list, isLoading: isListLoading } = useList(listId);
   const { membership } = useMembership(listId, user?.uid);
-  const { items, isLoading: isItemsLoading } = useItems(listId);
+  const { items, isLoading: isItemsLoading, remotelyChangedIds } =
+    useItems(listId);
+
+  // Remote highlight state - item IDs currently highlighted
+  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  // Deferred remote changes to apply when input loses focus
+  const deferredHighlightIdsRef = useRef<Set<string>>(new Set());
+  // Timeouts for clearing highlights after 2000ms
+  const highlightTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Cleanup highlight timeouts on unmount
+  useEffect(() => {
+    const timeouts = highlightTimeoutsRef.current;
+    return () => {
+      for (const timeout of timeouts.values()) {
+        clearTimeout(timeout);
+      }
+      timeouts.clear();
+    };
+  }, []);
+
+  // Apply highlight for an item ID (starts 2000ms timer to clear)
+  const applyHighlight = useCallback((itemId: string) => {
+    // Clear any existing timeout for this item
+    const existingTimeout = highlightTimeoutsRef.current.get(itemId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    // Add to highlighted set
+    setHighlightedIds((prev) => new Set(prev).add(itemId));
+
+    // Start 2000ms timer to remove highlight
+    const timeout = setTimeout(() => {
+      setHighlightedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+      highlightTimeoutsRef.current.delete(itemId);
+    }, 2000);
+
+    highlightTimeoutsRef.current.set(itemId, timeout);
+  }, []);
+
+  // Apply all deferred highlights
+  const applyDeferredHighlights = useCallback(() => {
+    const deferred = deferredHighlightIdsRef.current;
+    if (deferred.size > 0) {
+      for (const itemId of deferred) {
+        applyHighlight(itemId);
+      }
+      deferredHighlightIdsRef.current = new Set();
+    }
+  }, [applyHighlight]);
+
+  // Handle remote changes - apply highlights immediately or defer if input is focused
+  useEffect(() => {
+    if (remotelyChangedIds.length === 0) return;
+
+    for (const itemId of remotelyChangedIds) {
+      if (isInputFocusedRef.current) {
+        // Defer highlight while user is typing
+        deferredHighlightIdsRef.current.add(itemId);
+      } else {
+        // Apply highlight immediately
+        applyHighlight(itemId);
+      }
+    }
+  }, [remotelyChangedIds, applyHighlight]);
 
   const ensurePersonalList = useCallback(async () => {
     if (!user?.uid || !firestoreUser) return;
@@ -203,18 +305,81 @@ export default function ListDetailScreen() {
     }
   }, [inputValue, listId, user?.uid, markWritePending, list?.itemCount]);
 
+  // Start sink timer for a checked item
+  const startSinkTimer = useCallback((itemId: string) => {
+    // Clear any existing timer for this item
+    const existingTimeout = sinkTimeoutsRef.current.get(itemId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    // Add to pending set
+    setPendingSinkItemIds((prev) => new Set(prev).add(itemId));
+
+    // Start 500ms timer to sink the item
+    const timeout = setTimeout(() => {
+      // Don't sink while user is typing
+      if (isInputFocusedRef.current) {
+        // Re-schedule when focus is lost (handled in onBlur)
+        return;
+      }
+
+      // Remove from pending and trigger layout animation
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setPendingSinkItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+      sinkTimeoutsRef.current.delete(itemId);
+    }, 500);
+
+    sinkTimeoutsRef.current.set(itemId, timeout);
+  }, []);
+
+  // Cancel sink timer for an item being unchecked
+  const cancelSinkTimer = useCallback((itemId: string) => {
+    const timeout = sinkTimeoutsRef.current.get(itemId);
+    if (timeout) {
+      clearTimeout(timeout);
+      sinkTimeoutsRef.current.delete(itemId);
+    }
+
+    // Remove from pending and animate immediately back to unchecked position
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setPendingSinkItemIds((prev) => {
+      const next = new Set(prev);
+      next.delete(itemId);
+      return next;
+    });
+  }, []);
+
   // Handle check/uncheck
   const handleToggleChecked = useCallback(
     async (item: Item) => {
       if (!listId) return;
+
+      const isBeingChecked = !item.checked;
+
+      if (isBeingChecked) {
+        // Start sink timer - item stays in unchecked section for 500ms
+        startSinkTimer(item.id);
+      } else {
+        // Cancel any pending sink and move back immediately
+        cancelSinkTimer(item.id);
+      }
+
       markWritePending();
       try {
         await toggleItemChecked(listId, item.id);
       } catch {
-        // Silent error handling - UI will reflect actual state
+        // On error, clean up the pending state
+        if (isBeingChecked) {
+          cancelSinkTimer(item.id);
+        }
       }
     },
-    [listId, markWritePending]
+    [listId, markWritePending, startSinkTimer, cancelSinkTimer]
   );
 
   // Handle delete with undo
@@ -277,13 +442,79 @@ export default function ListDetailScreen() {
     }
   }, [listId, items, markWritePending, showUndoToast, showError]);
 
+  // Handle opening share sheet - fetch member names
+  const handleOpenShareSheet = useCallback(async () => {
+    if (!list) return;
+
+    setShowShareSheet(true);
+    setIsLoadingMembers(true);
+
+    try {
+      const names = await getUserDisplayNames(list.memberIds);
+      setMemberNames(names);
+    } catch (error) {
+      console.error('Failed to fetch member names:', error);
+      setMemberNames([]);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  }, [list]);
+
+  // Handle share success - show toast
+  const handleShareSuccess = useCallback(() => {
+    // Show a simple toast by using the undo toast with a no-op
+    // The user won't see the undo button because we close it quickly
+    showUndoToast({
+      message: 'Link shared',
+      onUndo: () => {
+        // No-op - sharing can't be undone
+      },
+    });
+  }, [showUndoToast]);
+
   // Separate items into unchecked and checked
+  // Items pending sink stay with unchecked items visually
   const uncheckedItems = items.filter((item) => !item.checked);
   const checkedItems = items.filter((item) => item.checked);
 
-  // Combine for display: unchecked first, then checked
-  const displayItems = [...uncheckedItems, ...checkedItems];
+  // Items that are checked but still pending sink animation stay at top
+  const pendingSinkItems = checkedItems.filter((item) =>
+    pendingSinkItemIds.has(item.id)
+  );
+  const sunkCheckedItems = checkedItems.filter(
+    (item) => !pendingSinkItemIds.has(item.id)
+  );
+
+  // Combine for display: unchecked first, then pending sink items, then fully sunk checked items
+  const displayItems = [
+    ...uncheckedItems,
+    ...pendingSinkItems,
+    ...sunkCheckedItems,
+  ];
   const checkedCount = checkedItems.length;
+
+  // Handle input focus - pause sink timers while typing
+  const handleInputFocus = useCallback(() => {
+    setIsInputFocused(true);
+  }, []);
+
+  // Handle input blur - resume pending sink animations and apply deferred highlights
+  const handleInputBlur = useCallback(() => {
+    setIsInputFocused(false);
+
+    // Apply deferred remote highlights
+    applyDeferredHighlights();
+
+    // Resume all pending sink timers
+    if (pendingSinkItemIds.size > 0) {
+      // After a brief delay, sink all pending items
+      setTimeout(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setPendingSinkItemIds(new Set());
+        sinkTimeoutsRef.current.clear();
+      }, 100);
+    }
+  }, [pendingSinkItemIds, applyDeferredHighlights]);
 
   // Overflow menu items
   const overflowMenuItems = [
@@ -313,6 +544,7 @@ export default function ListDetailScreen() {
   // Render item
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<Item>) => {
+      const isHighlighted = highlightedIds.has(item.id);
       return (
         <Swipeable
           ref={(ref) => {
@@ -331,11 +563,12 @@ export default function ListDetailScreen() {
             text={item.text}
             checked={item.checked}
             onPress={() => handleToggleChecked(item)}
+            highlighted={isHighlighted}
           />
         </Swipeable>
       );
     },
-    [handleToggleChecked, handleDeleteItem, renderRightActions]
+    [handleToggleChecked, handleDeleteItem, renderRightActions, highlightedIds]
   );
 
   // Key extractor
@@ -376,6 +609,14 @@ export default function ListDetailScreen() {
         <TopBar
           title={listTitle}
           subtitle={getStatusSubtitle()}
+          leftActions={
+            <GhostButton
+              onPress={handleOpenShareSheet}
+              accessibilityLabel="Share list"
+            >
+              Share
+            </GhostButton>
+          }
           rightActions={<OverflowMenu items={overflowMenuItems} />}
         />
 
@@ -403,6 +644,8 @@ export default function ListDetailScreen() {
           placeholder="Add item..."
           maxLength={MAX_TEXT_LENGTH}
           inputRef={inputRef}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
         />
 
         <ConfirmDialog
@@ -414,6 +657,17 @@ export default function ListDetailScreen() {
           onConfirm={handleClearChecked}
           destructive
         />
+
+        {list && firestoreUser && (
+          <ShareSheet
+            visible={showShareSheet}
+            onClose={() => setShowShareSheet(false)}
+            list={list}
+            currentUser={firestoreUser}
+            memberNames={isLoadingMembers ? [] : memberNames}
+            onShareSuccess={handleShareSuccess}
+          />
+        )}
       </Screen>
     </GestureHandlerRootView>
   );

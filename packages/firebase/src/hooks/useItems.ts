@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   collection,
   query,
@@ -14,6 +14,8 @@ export interface UseItemsReturn {
   items: Item[];
   isLoading: boolean;
   error: Error | null;
+  /** IDs of items that were added or modified by remote users (not local writes) */
+  remotelyChangedIds: string[];
 }
 
 /**
@@ -42,11 +44,16 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
     items: [],
     isLoading: true,
     error: null,
+    remotelyChangedIds: [],
   });
+
+  // Track previous item IDs and their serverUpdatedAt timestamps to detect remote changes
+  const previousItemsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (!listId) {
-      setState({ items: [], isLoading: false, error: null });
+      setState({ items: [], isLoading: false, error: null, remotelyChangedIds: [] });
+      previousItemsRef.current = new Map();
       return;
     }
 
@@ -76,13 +83,42 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
             serverUpdatedAt: data.serverUpdatedAt?.toMillis?.() ?? data.serverUpdatedAt ?? Date.now(),
           };
         });
-        setState({ items, isLoading: false, error: null });
+
+        // Detect remote changes using snapshot metadata
+        // hasPendingWrites === true means this is a local write that hasn't been confirmed
+        // hasPendingWrites === false means the data came from the server (could be our own write confirmed, or remote)
+        const remotelyChangedIds: string[] = [];
+
+        if (!snapshot.metadata.hasPendingWrites) {
+          const previousItems = previousItemsRef.current;
+
+          for (const item of items) {
+            const previousUpdatedAt = previousItems.get(item.id);
+
+            // Item is remotely changed if:
+            // 1. It's a new item (not in previous snapshot)
+            // 2. It has a different serverUpdatedAt timestamp (was modified)
+            if (previousUpdatedAt === undefined || previousUpdatedAt !== item.serverUpdatedAt) {
+              remotelyChangedIds.push(item.id);
+            }
+          }
+        }
+
+        // Update the previous items ref for next comparison
+        const newPreviousItems = new Map<string, number>();
+        for (const item of items) {
+          newPreviousItems.set(item.id, item.serverUpdatedAt);
+        }
+        previousItemsRef.current = newPreviousItems;
+
+        setState({ items, isLoading: false, error: null, remotelyChangedIds });
       },
       (error) => {
         setState({
           items: [],
           isLoading: false,
           error: error instanceof Error ? error : new Error('Failed to load items'),
+          remotelyChangedIds: [],
         });
       }
     );

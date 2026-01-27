@@ -1,0 +1,33 @@
+# Gitleaks configuration for Zusamn
+# See: https://github.com/gitleaks/gitleaks
+
+title = "Zusamn Secret Scanning"
+
+# Paths to ignore
+[allowlist]
+paths = [
+  '''node_modules''',
+  '''coverage''',
+  '''dist''',
+  '''build''',
+  '''.expo''',
+  '''\.lock$''',
+  '''pnpm-lock\.yaml''',
+  '''package-lock\.json''',
+]
+
+# Regex patterns to ignore (e.g., example/test values)
+regexes = [
+  '''example''',
+  '''test''',
+  '''dummy''',
+  '''placeholder''',
+  '''YOUR_.*_HERE''',
+]
+
+# Additional rules can be added here
+# [[rules]]
+# id = "custom-api-key"
+# description = "Custom API key pattern"
+# regex = '''custom_key_[a-zA-Z0-9]{32}'''
+# secretGroup = 0
