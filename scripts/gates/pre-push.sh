@@ -149,6 +149,9 @@ if [ -n "$ADVISORY" ]; then
 fi
 
 echo "════════════════════════════════════════════════════"
-echo "  Ready to push!"
+echo "  All gates passed!"
 echo "════════════════════════════════════════════════════"
+echo ""
+echo "📋 Next step: Run '/security-review' for AI security analysis"
+echo "   Fix any HIGH/MEDIUM findings before considering complete."
 echo ""
