@@ -7,6 +7,8 @@ export interface ListRowProps {
   checked: boolean;
   /** Called when the row is pressed to toggle checked state */
   onPress: () => void;
+  /** Called when the row is long-pressed (e.g., for delete action) */
+  onLongPress?: () => void;
   /** Whether this item should be highlighted (remote change indicator) */
   highlighted?: boolean;
 }
@@ -23,6 +25,7 @@ export function ListRow({
   text,
   checked,
   onPress,
+  onLongPress,
   highlighted = false,
 }: ListRowProps) {
   return (
@@ -34,6 +37,7 @@ export function ListRow({
       gap="$3" // 12px gap between checkbox and text
       backgroundColor={highlighted ? '$surface' : 'transparent'}
       onPress={onPress}
+      onLongPress={onLongPress}
       pressStyle={{ opacity: 0.7 }}
       accessible
       accessibilityRole="checkbox"

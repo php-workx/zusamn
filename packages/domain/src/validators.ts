@@ -7,7 +7,7 @@ export interface ValidationResult {
 }
 
 /**
- * Validates item text (max 100 characters)
+ * Validates item text (max 100 characters, trimmed)
  */
 export function isValidText(text: string): boolean {
   return validateItemText(text).valid;
@@ -31,10 +31,12 @@ export function validateItemText(text: string): ValidationResult {
 }
 
 /**
- * Validates alias (max 50 characters)
+ * Validates alias (max 50 characters, trimmed)
  */
 export function isValidAlias(alias: string): boolean {
-  return typeof alias === 'string' && alias.length > 0 && alias.length <= MAX_ALIAS_LENGTH;
+  if (typeof alias !== 'string') return false;
+  const trimmed = alias.trim();
+  return trimmed.length > 0 && trimmed.length <= MAX_ALIAS_LENGTH;
 }
 
 /**

@@ -11,6 +11,11 @@ import { initFirebase } from '../client';
 import type { Item } from '@zusamn/domain';
 import { validateItemText, LIMITS } from '@zusamn/domain';
 
+/** Error thrown when list is at capacity */
+export const LIST_FULL_ERROR = 'LIST_FULL';
+/** Error thrown when itemCount is missing and can't be computed */
+export const LIST_COUNT_MISSING_ERROR = 'LIST_COUNT_MISSING';
+
 /**
  * Gets the Firestore database instance.
  */

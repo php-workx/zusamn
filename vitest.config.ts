@@ -2,7 +2,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    environment: "node",
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
     include: [
       "**/src/**/*.test.ts",
       "**/src/**/*.test.tsx",
@@ -18,6 +19,8 @@ export default defineConfig({
       "**/*.emulator.test.tsx",
       "**/*.integration.test.ts",
       "**/*.integration.test.tsx",
+      // Exclude mobile app tests - they use Jest, not Vitest
+      "apps/mobile/**",
     ],
     coverage: {
       provider: "v8",

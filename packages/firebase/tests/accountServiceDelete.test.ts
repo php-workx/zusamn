@@ -12,10 +12,24 @@ vi.mock('firebase/auth', () => ({
   deleteUser: authMocks.deleteUserMock,
 }));
 
+const writeBatchMock = vi.hoisted(() => ({
+  delete: vi.fn(),
+  update: vi.fn(),
+  commit: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(),
   updateDoc: authMocks.updateDocMock,
   serverTimestamp: vi.fn(() => ({ __serverTimestamp: true })),
+  // Additional mocks needed for deleteAccountWithDb cascade delete
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }), // No lists to clean up
+  writeBatch: vi.fn(() => writeBatchMock),
+  arrayRemove: vi.fn(),
+  deleteDoc: vi.fn(),
 }));
 
 vi.mock('../src/auth', () => ({

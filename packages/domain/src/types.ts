@@ -15,6 +15,7 @@ export interface List {
   ownerUserId: string;
   memberIds: string[];
   createdAt: number;
+  /** Denormalized count of non-deleted items (for atomic limit enforcement) */
   itemCount?: number;
 }
 
