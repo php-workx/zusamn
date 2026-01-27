@@ -6,6 +6,15 @@ on:
   pull_request:
 
 jobs:
+  setup:
+    name: Setup & Cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - name: Warm turbo cache
+        run: pnpm turbo build typecheck lint --concurrency=4
+
   secrets:
     name: Secret Scan
     runs-on: ubuntu-latest
@@ -20,6 +29,7 @@ jobs:
 
   security-audit:
     name: Security Audit
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -28,6 +38,7 @@ jobs:
 
   lint:
     name: Lint
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -36,6 +47,7 @@ jobs:
 
   format:
     name: Format Check
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -44,6 +56,7 @@ jobs:
 
   typecheck:
     name: Type Check
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -52,6 +65,7 @@ jobs:
 
   test:
     name: Unit Tests
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -75,6 +89,7 @@ jobs:
 
   build:
     name: Build
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -83,6 +98,7 @@ jobs:
 
   functions:
     name: Firebase Functions
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
