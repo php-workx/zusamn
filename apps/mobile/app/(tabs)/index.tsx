@@ -40,7 +40,7 @@ import { MAX_TEXT_LENGTH, MAX_ITEMS_PER_LIST } from '@zusamn/domain';
 import type { Item } from '@zusamn/domain';
 import { useAuthContext, useToast } from '../../src/providers';
 import { useNetworkStatus, useLastUsedList } from '../../src/hooks';
-import { FixedBottomInput, ShareSheet } from '../../src/components';
+import { FixedBottomInput, ShareSheet, ListSwitcherSheet } from '../../src/components';
 
 /**
  * List Detail screen - main screen for viewing and managing a shopping list.
@@ -74,6 +74,9 @@ export default function ListDetailScreen() {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [memberNames, setMemberNames] = useState<string[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+
+  // List switcher state
+  const [showListSwitcher, setShowListSwitcher] = useState(false);
 
   // Swipeable refs for closing
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -461,6 +464,15 @@ export default function ListDetailScreen() {
     });
   }, [showUndoToast]);
 
+  // Handle list selection from switcher
+  const handleSelectList = useCallback(
+    (selectedList: { id: string }) => {
+      setListId(selectedList.id);
+      setLastUsedListId(selectedList.id);
+    },
+    [setLastUsedListId]
+  );
+
   // Separate items into unchecked and checked
   // Items pending sink stay with unchecked items visually
   const uncheckedItems = items.filter((item) => !item.checked);
@@ -597,6 +609,7 @@ export default function ListDetailScreen() {
         <TopBar
           title={listTitle}
           subtitle={getStatusSubtitle()}
+          onTitlePress={() => setShowListSwitcher(true)}
           leftActions={
             <GhostButton onPress={handleOpenShareSheet} accessibilityLabel="Share list">
               Share
@@ -648,6 +661,16 @@ export default function ListDetailScreen() {
             currentUser={firestoreUser}
             memberNames={isLoadingMembers ? [] : memberNames}
             onShareSuccess={handleShareSuccess}
+          />
+        )}
+
+        {user?.uid && (
+          <ListSwitcherSheet
+            visible={showListSwitcher}
+            onClose={() => setShowListSwitcher(false)}
+            userId={user.uid}
+            currentListId={listId}
+            onSelectList={handleSelectList}
           />
         )}
       </Screen>
