@@ -90,10 +90,7 @@ export async function getUserLists(
   const db = getDb();
 
   // Query all lists where user is a member
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('memberIds', 'array-contains', userId)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('memberIds', 'array-contains', userId));
   const listsSnapshot = await getDocs(listsQuery);
 
   // Fetch all memberships in parallel for better performance
@@ -118,8 +115,7 @@ export async function getUserLists(
       ownerUserId: listData.ownerUserId,
       memberIds: listData.memberIds,
       createdAt: listData.createdAt,
-      itemCount:
-        typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
+      itemCount: typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
     };
 
     if (membershipSnapshot.exists()) {
@@ -163,11 +159,7 @@ export async function getPersonalList(
   const db = getDb();
 
   // Query for list where user is the owner (limit 1 since each user has at most one personal list)
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('ownerUserId', '==', userId),
-    limit(1)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('ownerUserId', '==', userId), limit(1));
   const listsSnapshot = await getDocs(listsQuery);
 
   if (listsSnapshot.empty) {
@@ -185,8 +177,7 @@ export async function getPersonalList(
     ownerUserId: listData.ownerUserId,
     memberIds: listData.memberIds,
     createdAt: listData.createdAt,
-    itemCount:
-      typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
+    itemCount: typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
   };
 
   // Get the user's membership
@@ -195,9 +186,7 @@ export async function getPersonalList(
 
   if (!membershipSnapshot.exists()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        `Missing membership for owner ${userId} on personal list ${listDoc.id}.`
-      );
+      console.warn(`Missing membership for owner ${userId} on personal list ${listDoc.id}.`);
     }
     return null;
   }
@@ -220,11 +209,7 @@ export async function getPersonalList(
 export async function hasPersonalList(userId: string): Promise<boolean> {
   const db = getDb();
 
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('ownerUserId', '==', userId),
-    limit(1)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('ownerUserId', '==', userId), limit(1));
   const listsSnapshot = await getDocs(listsQuery);
 
   return !listsSnapshot.empty;

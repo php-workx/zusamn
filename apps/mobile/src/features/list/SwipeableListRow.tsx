@@ -29,11 +29,7 @@ const renderRightActions = () => DeleteAction;
  * ListRow with swipe-left delete gesture and long-press delete.
  * Per spec: swipe-left OR long-press both trigger delete.
  */
-export function SwipeableListRow({
-  item,
-  onToggleChecked,
-  onDelete,
-}: SwipeableListRowProps) {
+export function SwipeableListRow({ item, onToggleChecked, onDelete }: SwipeableListRowProps) {
   const swipeableRef = useRef<Swipeable>(null);
 
   const handleSwipeOpen = useCallback(() => {

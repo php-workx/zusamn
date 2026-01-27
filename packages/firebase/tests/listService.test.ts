@@ -139,16 +139,18 @@ describe('listService', () => {
     const { getPersonalList } = await loadListService();
     getDocsMock.mockResolvedValueOnce({
       empty: false,
-      docs: [{
-        id: 'list-personal',
-        data: () => ({
-          ownerUserId: 'user-1',
-          memberIds: ['user-1'],
-          createdAt: 1,
-          itemCount: 0,
-        }),
-        ref: { path: 'lists/list-personal' },
-      }],
+      docs: [
+        {
+          id: 'list-personal',
+          data: () => ({
+            ownerUserId: 'user-1',
+            memberIds: ['user-1'],
+            createdAt: 1,
+            itemCount: 0,
+          }),
+          ref: { path: 'lists/list-personal' },
+        },
+      ],
     });
     getDocMock.mockResolvedValueOnce({ exists: () => false });
 

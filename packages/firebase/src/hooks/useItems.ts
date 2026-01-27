@@ -1,12 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  type Firestore,
-} from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, type Firestore } from 'firebase/firestore';
 import type { Item } from '@zusamn/domain';
 import { initFirebase } from '../client';
 
@@ -82,8 +75,10 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
             checked: data.checked ?? false,
             deleted: data.deleted ?? false,
             createdByUserId: data.createdByUserId ?? '',
-            serverCreatedAt: data.serverCreatedAt?.toMillis?.() ?? data.serverCreatedAt ?? Date.now(),
-            serverUpdatedAt: data.serverUpdatedAt?.toMillis?.() ?? data.serverUpdatedAt ?? Date.now(),
+            serverCreatedAt:
+              data.serverCreatedAt?.toMillis?.() ?? data.serverCreatedAt ?? Date.now(),
+            serverUpdatedAt:
+              data.serverUpdatedAt?.toMillis?.() ?? data.serverUpdatedAt ?? Date.now(),
           };
         });
 

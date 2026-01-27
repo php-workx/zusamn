@@ -30,10 +30,7 @@ const GOOGLE_CLIENT_ID_WEB = getRequiredEnv('EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB');
 async function generateNonce(): Promise<{ nonce: string; hashedNonce: string }> {
   const randomBytes = await Crypto.getRandomBytesAsync(32);
   const nonce = Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  const hashedNonce = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    nonce
-  );
+  const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, nonce);
   return { nonce, hashedNonce };
 }
 

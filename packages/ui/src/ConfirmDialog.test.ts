@@ -15,10 +15,7 @@ const originalConsoleError = console.error;
 
 beforeEach(() => {
   console.error = (...args: unknown[]) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('react-test-renderer is deprecated')
-    ) {
+    if (typeof args[0] === 'string' && args[0].includes('react-test-renderer is deprecated')) {
       return;
     }
     originalConsoleError(...args);
@@ -50,8 +47,7 @@ const render = (element: React.ReactElement) =>
 
 describe('ConfirmDialog', () => {
   it('shows a native ActionSheet on iOS and triggers callbacks', async () => {
-    const { ConfirmDialog, showActionSheetWithOptions } =
-      await loadConfirmDialog('ios');
+    const { ConfirmDialog, showActionSheetWithOptions } = await loadConfirmDialog('ios');
     const onCancel = vi.fn();
     const onConfirm = vi.fn();
 
@@ -94,8 +90,7 @@ describe('ConfirmDialog', () => {
   });
 
   it('does not present twice while visible remains true', async () => {
-    const { ConfirmDialog, showActionSheetWithOptions } =
-      await loadConfirmDialog('ios');
+    const { ConfirmDialog, showActionSheetWithOptions } = await loadConfirmDialog('ios');
     const onCancel = vi.fn();
     const onConfirm = vi.fn();
 

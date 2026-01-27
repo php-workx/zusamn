@@ -66,8 +66,7 @@ describe('listService', () => {
       (call) => call[0]?.path === `lists/${result.list.id}`
     );
     const membershipCall = firestoreMocks.setMock.mock.calls.find(
-      (call) =>
-        call[0]?.path === `lists/${result.list.id}/memberships/user-123`
+      (call) => call[0]?.path === `lists/${result.list.id}/memberships/user-123`
     );
 
     expect(listCall).toBeTruthy();

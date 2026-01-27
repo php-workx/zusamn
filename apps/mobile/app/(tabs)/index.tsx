@@ -51,8 +51,7 @@ export default function ListDetailScreen() {
   const { showUndoToast } = useToast();
   const { isConnected } = useNetworkStatus();
   const { hasPendingWrites, markWritePending } = useSyncStatus();
-  const { getLastUsedListId, setLastUsedListId, clearLastUsedListId } =
-    useLastUsedList();
+  const { getLastUsedListId, setLastUsedListId, clearLastUsedListId } = useLastUsedList();
   const showError = useCallback((message: string, error?: unknown) => {
     console.error(message, error);
     Alert.alert('Something went wrong', message);
@@ -80,9 +79,7 @@ export default function ListDetailScreen() {
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
 
   // Pending sink animation state - items waiting to move to checked section
-  const [pendingSinkItemIds, setPendingSinkItemIds] = useState<Set<string>>(
-    () => new Set()
-  );
+  const [pendingSinkItemIds, setPendingSinkItemIds] = useState<Set<string>>(() => new Set());
   const sinkTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const isInputFocusedRef = useRef(false);
 
@@ -109,13 +106,10 @@ export default function ListDetailScreen() {
   });
   const { list, isLoading: isListLoading } = useList(listId);
   const { membership } = useMembership(listId, user?.uid);
-  const { items, isLoading: isItemsLoading, remotelyChangedIds } =
-    useItems(listId);
+  const { items, isLoading: isItemsLoading, remotelyChangedIds } = useItems(listId);
 
   // Remote highlight state - item IDs currently highlighted
-  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(
-    () => new Set()
-  );
+  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(() => new Set());
   // Deferred remote changes to apply when input loses focus
   const deferredHighlightIdsRef = useRef<Set<string>>(new Set());
   // Timeouts for clearing highlights after 2000ms
@@ -192,10 +186,7 @@ export default function ListDetailScreen() {
       return;
     }
 
-    const { list: newList } = await createPersonalList(
-      user.uid,
-      firestoreUser.locale
-    );
+    const { list: newList } = await createPersonalList(user.uid, firestoreUser.locale);
     setListId(newList.id);
     setLastUsedListId(newList.id);
   }, [user?.uid, firestoreUser, setLastUsedListId]);
@@ -224,9 +215,7 @@ export default function ListDetailScreen() {
         }
       } catch (error) {
         if (!active) return;
-        setInitError(
-          error instanceof Error ? error : new Error('Failed to initialize list')
-        );
+        setInitError(error instanceof Error ? error : new Error('Failed to initialize list'));
         setIsInitializing(false);
       }
     }
@@ -251,9 +240,7 @@ export default function ListDetailScreen() {
         await ensurePersonalList();
       } catch (error) {
         if (!active) return;
-        setInitError(
-          error instanceof Error ? error : new Error('Failed to recover list')
-        );
+        setInitError(error instanceof Error ? error : new Error('Failed to recover list'));
       }
     };
 
@@ -262,14 +249,7 @@ export default function ListDetailScreen() {
     return () => {
       active = false;
     };
-  }, [
-    listId,
-    list,
-    isInitializing,
-    isListLoading,
-    clearLastUsedListId,
-    ensurePersonalList,
-  ]);
+  }, [listId, list, isInitializing, isListLoading, clearLastUsedListId, ensurePersonalList]);
 
   // Determine status subtitle
   const getStatusSubtitle = useCallback((): string | undefined => {
@@ -285,10 +265,7 @@ export default function ListDetailScreen() {
     if (!text || !listId || !user?.uid) return;
 
     // Check item limit
-    const count =
-      typeof list?.itemCount === 'number'
-        ? list.itemCount
-        : await getItemCount(listId);
+    const count = typeof list?.itemCount === 'number' ? list.itemCount : await getItemCount(listId);
     if (count >= MAX_ITEMS_PER_LIST) {
       Alert.alert(
         'List is full',
@@ -481,19 +458,11 @@ export default function ListDetailScreen() {
   const checkedItems = items.filter((item) => item.checked);
 
   // Items that are checked but still pending sink animation stay at top
-  const pendingSinkItems = checkedItems.filter((item) =>
-    pendingSinkItemIds.has(item.id)
-  );
-  const sunkCheckedItems = checkedItems.filter(
-    (item) => !pendingSinkItemIds.has(item.id)
-  );
+  const pendingSinkItems = checkedItems.filter((item) => pendingSinkItemIds.has(item.id));
+  const sunkCheckedItems = checkedItems.filter((item) => !pendingSinkItemIds.has(item.id));
 
   // Combine for display: unchecked first, then pending sink items, then fully sunk checked items
-  const displayItems = [
-    ...uncheckedItems,
-    ...pendingSinkItems,
-    ...sunkCheckedItems,
-  ];
+  const displayItems = [...uncheckedItems, ...pendingSinkItems, ...sunkCheckedItems];
   const checkedCount = checkedItems.length;
 
   // Handle input focus - pause sink timers while typing
@@ -616,10 +585,7 @@ export default function ListDetailScreen() {
           title={listTitle}
           subtitle={getStatusSubtitle()}
           leftActions={
-            <GhostButton
-              onPress={handleOpenShareSheet}
-              accessibilityLabel="Share list"
-            >
+            <GhostButton onPress={handleOpenShareSheet} accessibilityLabel="Share list">
               Share
             </GhostButton>
           }
@@ -628,10 +594,7 @@ export default function ListDetailScreen() {
 
         {displayItems.length === 0 && !isItemsLoading ? (
           <YStack flex={1} justifyContent="center" paddingBottom={100}>
-            <EmptyState
-              message="Your list is empty"
-              description="Add your first item below"
-            />
+            <EmptyState message="Your list is empty" description="Add your first item below" />
           </YStack>
         ) : (
           <FlatList

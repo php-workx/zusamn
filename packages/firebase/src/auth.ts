@@ -52,9 +52,7 @@ export function getFirebaseAuth(): Auth {
  * Subscribe to auth state changes.
  * Returns an unsubscribe function.
  */
-export function onAuthStateChanged(
-  callback: (user: AuthUser | null) => void
-): Unsubscribe {
+export function onAuthStateChanged(callback: (user: AuthUser | null) => void): Unsubscribe {
   const auth = getFirebaseAuth();
   return firebaseOnAuthStateChanged(auth, (firebaseUser) => {
     callback(firebaseUser ? toAuthUser(firebaseUser) : null);
@@ -76,10 +74,7 @@ export async function signInWithGoogle(idToken: string): Promise<AuthUser> {
  * Sign in with Apple using an identity token from expo-auth-session.
  * The identityToken should come from Apple OAuth via expo-apple-authentication.
  */
-export async function signInWithApple(
-  identityToken: string,
-  nonce?: string
-): Promise<AuthUser> {
+export async function signInWithApple(identityToken: string, nonce?: string): Promise<AuthUser> {
   const auth = getFirebaseAuth();
   const provider = new OAuthProvider('apple.com');
   const credential = provider.credential({

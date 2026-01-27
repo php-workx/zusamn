@@ -46,17 +46,22 @@ beforeEach(() => {
   docMock.mockImplementation(() => ({ id: 'item-1' }));
   serverTimestampMock.mockReturnValue('server-time');
 
-  runTransactionMock.mockImplementation(async (_db: unknown, callback: (tx: {
-    get: typeof transactionGetMock;
-    set: typeof transactionSetMock;
-    update: typeof transactionUpdateMock;
-  }) => Promise<void>) => {
-    await callback({
-      get: transactionGetMock,
-      set: transactionSetMock,
-      update: transactionUpdateMock,
-    });
-  });
+  runTransactionMock.mockImplementation(
+    async (
+      _db: unknown,
+      callback: (tx: {
+        get: typeof transactionGetMock;
+        set: typeof transactionSetMock;
+        update: typeof transactionUpdateMock;
+      }) => Promise<void>
+    ) => {
+      await callback({
+        get: transactionGetMock,
+        set: transactionSetMock,
+        update: transactionUpdateMock,
+      });
+    }
+  );
 
   vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'item-1') });
 });
@@ -79,9 +84,7 @@ describe('itemService', () => {
   it('addItem rejects invalid text', async () => {
     const { addItem } = await loadItemService();
 
-    await expect(addItem('list-1', '', 'user-1')).rejects.toThrow(
-      'Item text cannot be empty'
-    );
+    await expect(addItem('list-1', '', 'user-1')).rejects.toThrow('Item text cannot be empty');
   });
 
   it('addItem rejects when list limit reached', async () => {
@@ -143,9 +146,7 @@ describe('itemService', () => {
     const { toggleItemChecked } = await loadItemService();
     transactionGetMock.mockResolvedValueOnce({ exists: () => false });
 
-    await expect(toggleItemChecked('list-1', 'item-1')).rejects.toThrow(
-      'Item not found: item-1'
-    );
+    await expect(toggleItemChecked('list-1', 'item-1')).rejects.toThrow('Item not found: item-1');
   });
 
   it('toggleItemChecked flips checked state', async () => {
@@ -212,7 +213,7 @@ describe('itemService', () => {
   it('bulkSoftDelete skips empty input', async () => {
     const { bulkSoftDelete } = await loadItemService();
 
-    await bulkSoftDelete('list-1', []); 
+    await bulkSoftDelete('list-1', []);
 
     expect(runTransactionMock).not.toHaveBeenCalled();
   });

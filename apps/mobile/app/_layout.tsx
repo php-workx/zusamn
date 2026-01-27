@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { AppProvider } from '@zusamn/ui';
-import { AuthProvider, PersonalListProvider, ToastProvider, useAuthContext } from '../src/providers';
+import {
+  AuthProvider,
+  PersonalListProvider,
+  ToastProvider,
+  useAuthContext,
+} from '../src/providers';
 import { usePendingInvite } from '../src/hooks';
 
 /**
@@ -65,15 +70,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         router.replace('/(tabs)');
       }
     }
-  }, [
-    user,
-    isLoading,
-    needsDisplayName,
-    segments,
-    router,
-    getPendingInvite,
-    clearPendingInvite,
-  ]);
+  }, [user, isLoading, needsDisplayName, segments, router, getPendingInvite, clearPendingInvite]);
 
   return <>{children}</>;
 }

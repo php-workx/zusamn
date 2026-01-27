@@ -37,16 +37,10 @@ jest.mock('@zusamn/ui', () => {
   const { Text, View, Pressable } = require('react-native');
 
   return {
-    Screen: ({ children }: { children: React.ReactNode }) => (
-      <View>{children}</View>
-    ),
+    Screen: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
     TopBar: ({ title }: { title: string }) => <Text>{title}</Text>,
-    YStack: ({ children }: { children: React.ReactNode }) => (
-      <View>{children}</View>
-    ),
-    Text: ({ children }: { children: React.ReactNode }) => (
-      <Text>{children}</Text>
-    ),
+    YStack: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
+    Text: ({ children }: { children: React.ReactNode }) => <Text>{children}</Text>,
     PrimaryButton: ({
       children,
       onPress,
@@ -137,9 +131,7 @@ describe('AccountScreen', () => {
 
     fireEvent.press(getByText('Delete Account'));
 
-    expect(
-      await findByText('Delete Account requires an internet connection.')
-    ).toBeTruthy();
+    expect(await findByText('Delete Account requires an internet connection.')).toBeTruthy();
     expect(mockDeleteAccount).not.toHaveBeenCalled();
   });
 

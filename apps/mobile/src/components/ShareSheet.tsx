@@ -77,11 +77,7 @@ export function ShareSheet({
 
     try {
       // Generate invite link
-      const inviteId = await generateInvite(
-        list.id,
-        shareName.trim(),
-        currentUser.id
-      );
+      const inviteId = await generateInvite(list.id, shareName.trim(), currentUser.id);
 
       // Construct the invite URL
       const inviteUrl = `https://zusamn.com/invite/${inviteId}`;
@@ -99,10 +95,7 @@ export function ShareSheet({
       }
     } catch (error) {
       console.error('Failed to create invite:', error);
-      Alert.alert(
-        'Unable to share',
-        'Something went wrong. Please try again.'
-      );
+      Alert.alert('Unable to share', 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -114,11 +107,7 @@ export function ShareSheet({
       <SheetModal visible={visible} onClose={onClose} title="Share List">
         <YStack gap="$4">
           {/* Explanation */}
-          <Text
-            fontSize="$2"
-            color="$textMuted"
-            textAlign="center"
-          >
+          <Text fontSize="$2" color="$textMuted" textAlign="center">
             This list is full (maximum 3 people)
           </Text>
 
@@ -126,12 +115,7 @@ export function ShareSheet({
 
           {/* Member names */}
           <YStack gap="$2">
-            <Text
-              fontSize="$1"
-              fontWeight="$2"
-              color="$textMuted"
-              textAlign="center"
-            >
+            <Text fontSize="$1" fontWeight="$2" color="$textMuted" textAlign="center">
               Current members:
             </Text>
             {memberNames.map((name, index) => (
@@ -149,9 +133,7 @@ export function ShareSheet({
           <Separator />
 
           {/* Close button */}
-          <GhostButton onPress={onClose}>
-            Close
-          </GhostButton>
+          <GhostButton onPress={onClose}>Close</GhostButton>
         </YStack>
       </SheetModal>
     );
@@ -163,11 +145,7 @@ export function ShareSheet({
       <YStack gap="$4">
         {/* Share name input */}
         <YStack gap="$2">
-          <Text
-            fontSize="$1"
-            fontWeight="$2"
-            color="$textMuted"
-          >
+          <Text fontSize="$1" fontWeight="$2" color="$textMuted">
             Share name
           </Text>
           <TextField
@@ -180,17 +158,8 @@ export function ShareSheet({
         </YStack>
 
         {/* Expiry notice */}
-        <XStack
-          backgroundColor="$surface"
-          padding="$3"
-          borderRadius="$1"
-          justifyContent="center"
-        >
-          <Text
-            fontSize="$1"
-            color="$textMuted"
-            textAlign="center"
-          >
+        <XStack backgroundColor="$surface" padding="$3" borderRadius="$1" justifyContent="center">
+          <Text fontSize="$1" color="$textMuted" textAlign="center">
             Link expires in 7 days
           </Text>
         </XStack>

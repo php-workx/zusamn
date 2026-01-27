@@ -13,10 +13,7 @@
  */
 export function generateUUID(): string {
   // Try Web Crypto API first (available in browsers and Node.js 19+)
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
 

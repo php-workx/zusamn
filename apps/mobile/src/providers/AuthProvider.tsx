@@ -1,10 +1,4 @@
-import {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import {
   type AuthUser,
   getCurrentUser,
@@ -83,8 +77,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const authUser = await firebaseSignInWithGoogle(idToken);
       setUser(authUser);
     } catch (err) {
-      const authError =
-        err instanceof Error ? err : new Error('Google sign in failed');
+      const authError = err instanceof Error ? err : new Error('Google sign in failed');
       setError(authError);
       throw authError;
     } finally {
@@ -92,18 +85,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const signInWithApple = async (
-    identityToken: string,
-    nonce?: string
-  ): Promise<void> => {
+  const signInWithApple = async (identityToken: string, nonce?: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
       const authUser = await firebaseSignInWithApple(identityToken, nonce);
       setUser(authUser);
     } catch (err) {
-      const authError =
-        err instanceof Error ? err : new Error('Apple sign in failed');
+      const authError = err instanceof Error ? err : new Error('Apple sign in failed');
       setError(authError);
       throw authError;
     } finally {
@@ -118,8 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await firebaseSignOut();
       setUser(null);
     } catch (err) {
-      const authError =
-        err instanceof Error ? err : new Error('Sign out failed');
+      const authError = err instanceof Error ? err : new Error('Sign out failed');
       setError(authError);
       throw authError;
     } finally {
@@ -134,8 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const updatedUser = await firebaseUpdateDisplayName(displayName);
       setUser(updatedUser);
     } catch (err) {
-      const authError =
-        err instanceof Error ? err : new Error('Failed to update display name');
+      const authError = err instanceof Error ? err : new Error('Failed to update display name');
       setError(authError);
       throw authError;
     } finally {

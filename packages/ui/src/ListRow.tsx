@@ -56,11 +56,7 @@ export function ListRow({
         justifyContent="center"
       >
         {checked && (
-          <Text
-            fontSize={14}
-            color="$accentColor"
-            fontWeight="$2"
-          >
+          <Text fontSize={14} color="$accentColor" fontWeight="$2">
             ✓
           </Text>
         )}

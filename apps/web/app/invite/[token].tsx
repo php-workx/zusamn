@@ -49,13 +49,7 @@ function Avatar({ displayName, avatarUrl }: { displayName: string; avatarUrl?: s
 
   if (avatarUrl) {
     return (
-      <XStack
-        width={64}
-        height={64}
-        borderRadius={32}
-        overflow="hidden"
-        backgroundColor="$surface"
-      >
+      <XStack width={64} height={64} borderRadius={32} overflow="hidden" backgroundColor="$surface">
         <img
           src={avatarUrl}
           alt={displayName}

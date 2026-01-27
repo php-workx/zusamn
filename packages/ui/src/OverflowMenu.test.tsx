@@ -53,10 +53,7 @@ describe('OverflowMenu', () => {
   it('calls item onPress and closes menu when item is clicked', async () => {
     const onEdit = vi.fn();
     const items = [{ label: 'Edit', onPress: onEdit }];
-    render(
-      <OverflowMenu items={items} />,
-      { wrapper }
-    );
+    render(<OverflowMenu items={items} />, { wrapper });
 
     // Open menu
     fireEvent.click(getOverflowTrigger());

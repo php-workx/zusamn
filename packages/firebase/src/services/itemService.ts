@@ -68,11 +68,7 @@ export async function getItemCount(listId: string): Promise<number> {
  * @returns The created item (with placeholder timestamps until server resolves them)
  * @throws Error if validation fails or item limit (200) is reached
  */
-export async function addItem(
-  listId: string,
-  text: string,
-  userId: string
-): Promise<Item> {
+export async function addItem(listId: string, text: string, userId: string): Promise<Item> {
   // Validate text
   const validation = validateItemText(text);
   if (!validation.valid) {
@@ -104,8 +100,7 @@ export async function addItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
 
     if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(
@@ -142,10 +137,7 @@ export async function addItem(
  * @param itemId - The ID of the item to toggle
  * @throws Error if item does not exist
  */
-export async function toggleItemChecked(
-  listId: string,
-  itemId: string
-): Promise<void> {
+export async function toggleItemChecked(listId: string, itemId: string): Promise<void> {
   const itemRef = getItemRef(listId, itemId);
 
   const db = getDb();
@@ -172,10 +164,7 @@ export async function toggleItemChecked(
  * @param listId - The ID of the list containing the item
  * @param itemId - The ID of the item to soft delete
  */
-export async function softDeleteItem(
-  listId: string,
-  itemId: string
-): Promise<void> {
+export async function softDeleteItem(listId: string, itemId: string): Promise<void> {
   const db = getDb();
   const listRef = getListRef(listId);
   const itemRef = getItemRef(listId, itemId);
@@ -199,8 +188,7 @@ export async function softDeleteItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
 
     transaction.update(itemRef, {
       deleted: true,
@@ -219,10 +207,7 @@ export async function softDeleteItem(
  * @param listId - The ID of the list containing the item
  * @param itemId - The ID of the item to restore
  */
-export async function undeleteItem(
-  listId: string,
-  itemId: string
-): Promise<void> {
+export async function undeleteItem(listId: string, itemId: string): Promise<void> {
   const db = getDb();
   const listRef = getListRef(listId);
   const itemRef = getItemRef(listId, itemId);
@@ -246,8 +231,7 @@ export async function undeleteItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
 
     if (currentCount + 1 > LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(
@@ -270,10 +254,7 @@ export async function undeleteItem(
  * @param listId - The ID of the list containing the items
  * @param itemIds - Array of item IDs to soft delete
  */
-export async function bulkSoftDelete(
-  listId: string,
-  itemIds: string[]
-): Promise<void> {
+export async function bulkSoftDelete(listId: string, itemIds: string[]): Promise<void> {
   // Prefilter and deduplicate itemIds to prevent duplicate reads/decrements
   const cleanedIds = [...new Set(itemIds.filter((id) => id?.trim()))];
   if (cleanedIds.length === 0) {
@@ -316,8 +297,7 @@ export async function bulkSoftDelete(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
 
     transaction.update(listRef, {
       itemCount: Math.max(0, currentCount - actualDeletedCount),
@@ -332,10 +312,7 @@ export async function bulkSoftDelete(
  * @param listId - The ID of the list containing the items
  * @param itemIds - Array of item IDs to restore
  */
-export async function bulkUndelete(
-  listId: string,
-  itemIds: string[]
-): Promise<void> {
+export async function bulkUndelete(listId: string, itemIds: string[]): Promise<void> {
   // Prefilter and deduplicate itemIds to prevent duplicate reads/increments
   const cleanedIds = [...new Set(itemIds.filter((id) => id?.trim()))];
   if (cleanedIds.length === 0) {
@@ -378,8 +355,7 @@ export async function bulkUndelete(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
 
     if (currentCount + restoredCount > LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(

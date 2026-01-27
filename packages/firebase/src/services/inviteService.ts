@@ -1,10 +1,4 @@
-import {
-  doc,
-  getDoc,
-  runTransaction,
-  Timestamp,
-  arrayUnion,
-} from 'firebase/firestore';
+import { doc, getDoc, runTransaction, Timestamp, arrayUnion } from 'firebase/firestore';
 import { initFirebase } from '../client';
 import { generateUUID } from '../utils';
 import type { Invite, Membership } from '@zusamn/domain';
@@ -114,10 +108,7 @@ export async function getInvite(inviteId: string): Promise<Invite | null> {
  * @param userId - The ID of the user redeeming the invite
  * @returns Result indicating success or failure with reason
  */
-export async function redeemInvite(
-  inviteId: string,
-  userId: string
-): Promise<RedeemInviteResult> {
+export async function redeemInvite(inviteId: string, userId: string): Promise<RedeemInviteResult> {
   const db = getDb();
   const inviteRef = doc(db, 'invites', inviteId);
 
@@ -178,13 +169,7 @@ export async function redeemInvite(
     });
 
     // Step 9: Create membership document
-    const membershipRef = doc(
-      db,
-      'lists',
-      inviteData.listId,
-      'memberships',
-      userId
-    );
+    const membershipRef = doc(db, 'lists', inviteData.listId, 'memberships', userId);
     const membership: Omit<Membership, 'userId' | 'listId'> & {
       userId: string;
       listId: string;

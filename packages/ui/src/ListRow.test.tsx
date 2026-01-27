@@ -11,29 +11,26 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 describe('ListRow', () => {
   it('renders item text', () => {
-    const { getByText } = render(
-      <ListRow text="Milk" checked={false} onPress={() => {}} />,
-      { wrapper }
-    );
+    const { getByText } = render(<ListRow text="Milk" checked={false} onPress={() => {}} />, {
+      wrapper,
+    });
 
     expect(getByText('Milk')).toBeTruthy();
   });
 
   it('shows checkmark when checked', () => {
-    const { container } = render(
-      <ListRow text="Milk" checked={true} onPress={() => {}} />,
-      { wrapper }
-    );
+    const { container } = render(<ListRow text="Milk" checked={true} onPress={() => {}} />, {
+      wrapper,
+    });
 
     // Verify checkmark is present in the rendered output
     expect(container.textContent).toContain('✓');
   });
 
   it('does not show checkmark when unchecked', () => {
-    const { container } = render(
-      <ListRow text="Milk" checked={false} onPress={() => {}} />,
-      { wrapper }
-    );
+    const { container } = render(<ListRow text="Milk" checked={false} onPress={() => {}} />, {
+      wrapper,
+    });
 
     // Verify checkmark is NOT present
     expect(container.textContent).not.toContain('✓');
@@ -41,10 +38,9 @@ describe('ListRow', () => {
 
   it('calls onPress when clicked', () => {
     const onPress = vi.fn();
-    const { container } = render(
-      <ListRow text="Milk" checked={false} onPress={onPress} />,
-      { wrapper }
-    );
+    const { container } = render(<ListRow text="Milk" checked={false} onPress={onPress} />, {
+      wrapper,
+    });
 
     // Find the clickable element and click it
     const clickable = container.querySelector('[role="checkbox"]');
@@ -55,10 +51,9 @@ describe('ListRow', () => {
   });
 
   it('has correct accessibility attributes when unchecked', () => {
-    const { container } = render(
-      <ListRow text="Milk" checked={false} onPress={() => {}} />,
-      { wrapper }
-    );
+    const { container } = render(<ListRow text="Milk" checked={false} onPress={() => {}} />, {
+      wrapper,
+    });
 
     const checkbox = container.querySelector('[role="checkbox"]');
     expect(checkbox).toBeTruthy();
@@ -66,10 +61,9 @@ describe('ListRow', () => {
   });
 
   it('has correct accessibility attributes when checked', () => {
-    const { container } = render(
-      <ListRow text="Milk" checked={true} onPress={() => {}} />,
-      { wrapper }
-    );
+    const { container } = render(<ListRow text="Milk" checked={true} onPress={() => {}} />, {
+      wrapper,
+    });
 
     const checkbox = container.querySelector('[role="checkbox"]');
     expect(checkbox).toBeTruthy();

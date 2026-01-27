@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen, Text, TopBar, YStack, PrimaryButton } from '@zusamn/ui';
-import {
-  getInvite,
-  redeemInvite,
-  type RedeemInviteResult,
-} from '@zusamn/firebase';
+import { getInvite, redeemInvite, type RedeemInviteResult } from '@zusamn/firebase';
 import type { Invite } from '@zusamn/domain';
 import { useAuthContext } from '../../src/providers';
 import { usePendingInvite, useLastUsedList } from '../../src/hooks';
@@ -199,14 +195,7 @@ export default function InviteScreen() {
     return () => {
       active = false;
     };
-  }, [
-    state.status,
-    user,
-    token,
-    invite,
-    clearPendingInvite,
-    setLastUsedListId,
-  ]);
+  }, [state.status, user, token, invite, clearPendingInvite, setLastUsedListId]);
 
   // Navigate to list on success (after brief delay for UX)
   useEffect(() => {
@@ -254,13 +243,7 @@ export default function InviteScreen() {
     return (
       <Screen>
         <TopBar title="Invalid Invite" />
-        <YStack
-          flex={1}
-          justifyContent="center"
-          alignItems="center"
-          gap="$4"
-          padding="$4"
-        >
+        <YStack flex={1} justifyContent="center" alignItems="center" gap="$4" padding="$4">
           <Text fontSize="$2" color="$text" textAlign="center">
             Invalid invite link
           </Text>
@@ -277,13 +260,7 @@ export default function InviteScreen() {
     return (
       <Screen>
         <TopBar title="Join List" />
-        <YStack
-          flex={1}
-          justifyContent="center"
-          alignItems="center"
-          gap="$4"
-          padding="$4"
-        >
+        <YStack flex={1} justifyContent="center" alignItems="center" gap="$4" padding="$4">
           {invite && (
             <>
               <Text fontSize="$3" fontWeight="$2" color="$text" textAlign="center">
@@ -317,13 +294,7 @@ export default function InviteScreen() {
     return (
       <Screen>
         <TopBar title="Joined!" />
-        <YStack
-          flex={1}
-          justifyContent="center"
-          alignItems="center"
-          gap="$4"
-          padding="$4"
-        >
+        <YStack flex={1} justifyContent="center" alignItems="center" gap="$4" padding="$4">
           <Text fontSize="$3" fontWeight="$2" color="$text" textAlign="center">
             You joined the list!
           </Text>
@@ -346,20 +317,12 @@ export default function InviteScreen() {
   return (
     <Screen>
       <TopBar title="Invite" />
-      <YStack
-        flex={1}
-        justifyContent="center"
-        alignItems="center"
-        gap="$4"
-        padding="$4"
-      >
+      <YStack flex={1} justifyContent="center" alignItems="center" gap="$4" padding="$4">
         <Text fontSize="$2" color="$danger" textAlign="center">
           {state.message}
         </Text>
         {navigateToListId ? (
-          <PrimaryButton onPress={() => handleGoToList(navigateToListId)}>
-            Go to list
-          </PrimaryButton>
+          <PrimaryButton onPress={() => handleGoToList(navigateToListId)}>Go to list</PrimaryButton>
         ) : (
           <PrimaryButton onPress={handleGoHome}>Go to my lists</PrimaryButton>
         )}

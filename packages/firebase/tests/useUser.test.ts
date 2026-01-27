@@ -35,7 +35,10 @@ afterEach(() => {
 });
 
 function TestComponent({ userId }: { userId: string | null }) {
-  const { user, isLoading } = useUser(userId, { displayName: 'Test User', email: 'test@example.com' });
+  const { user, isLoading } = useUser(userId, {
+    displayName: 'Test User',
+    email: 'test@example.com',
+  });
   if (isLoading) {
     return React.createElement('div', { 'data-testid': 'state' }, 'loading');
   }

@@ -464,9 +464,7 @@ describe('List items (/lists/{listId}/items/{itemId})', () => {
 
     const nonMemberContext = testEnv.authenticatedContext(nonMemberId);
     const nonMemberDb = nonMemberContext.firestore();
-    await assertFails(
-      getDoc(doc(nonMemberDb, 'lists', listId, 'items', itemId))
-    );
+    await assertFails(getDoc(doc(nonMemberDb, 'lists', listId, 'items', itemId)));
   });
 
   it('FR-LIST-004: member can update non-deleted item', async () => {
@@ -872,9 +870,7 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
 
     const userContext = testEnv.authenticatedContext(userId);
     const userDb = userContext.firestore();
-    await assertSucceeds(
-      getDoc(doc(userDb, 'lists', listId, 'memberships', userId))
-    );
+    await assertSucceeds(getDoc(doc(userDb, 'lists', listId, 'memberships', userId)));
   });
 
   it('FR-SWITCH-007: member can update their own alias', async () => {
@@ -954,9 +950,7 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
     const userContext = testEnv.authenticatedContext(userId);
     const userDb = userContext.firestore();
 
-    await assertSucceeds(
-      deleteDoc(doc(userDb, 'lists', listId, 'memberships', userId))
-    );
+    await assertSucceeds(deleteDoc(doc(userDb, 'lists', listId, 'memberships', userId)));
   });
 
   it('member can remove themselves and delete membership in one batch', async () => {
@@ -1012,9 +1006,7 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
     const userContext = testEnv.authenticatedContext(userId);
     const userDb = userContext.firestore();
 
-    await assertFails(
-      deleteDoc(doc(userDb, 'lists', listId, 'memberships', otherId))
-    );
+    await assertFails(deleteDoc(doc(userDb, 'lists', listId, 'memberships', otherId)));
   });
 
   it('non-member cannot read membership documents', async () => {
@@ -1038,8 +1030,6 @@ describe('Memberships (/lists/{listId}/memberships/{userId})', () => {
 
     const nonMemberContext = testEnv.authenticatedContext(nonMemberId);
     const nonMemberDb = nonMemberContext.firestore();
-    await assertFails(
-      getDoc(doc(nonMemberDb, 'lists', listId, 'memberships', ownerId))
-    );
+    await assertFails(getDoc(doc(nonMemberDb, 'lists', listId, 'memberships', ownerId)));
   });
 });

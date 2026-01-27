@@ -39,7 +39,9 @@ export function GhostButton({
       opacity={disabled ? 0.5 : 1}
       accessible
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
+      accessibilityLabel={
+        accessibilityLabel || (typeof children === 'string' ? children : undefined)
+      }
       accessibilityState={{ disabled }}
     >
       <Text

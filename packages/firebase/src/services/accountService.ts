@@ -18,10 +18,7 @@ import { getUser } from './userService';
 export { getUser as getUserById } from './userService';
 
 function isReauthRequiredError(error: unknown): boolean {
-  return (
-    error instanceof FirebaseError &&
-    error.code === 'auth/requires-recent-login'
-  );
+  return error instanceof FirebaseError && error.code === 'auth/requires-recent-login';
 }
 
 /**
@@ -34,19 +31,13 @@ function isReauthRequiredError(error: unknown): boolean {
  * @param db - Firestore database instance
  * @param userId - The ID of the user to delete
  */
-export async function deleteAccountWithDb(
-  db: Firestore,
-  userId: string
-): Promise<void> {
+export async function deleteAccountWithDb(db: Firestore, userId: string): Promise<void> {
   if (!userId) {
     throw new Error('User ID is required');
   }
 
   // Find all lists where user is a member
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('memberIds', 'array-contains', userId)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('memberIds', 'array-contains', userId));
   const listsSnapshot = await getDocs(listsQuery);
 
   const batch = writeBatch(db);

@@ -63,9 +63,7 @@ export function useList(listId: string | null | undefined): UseListReturn {
             ownerUserId: data.ownerUserId ?? '',
             memberIds: data.memberIds ?? [],
             createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
-            itemCount: Number.isFinite(itemCount ?? Number.NaN)
-              ? itemCount
-              : undefined,
+            itemCount: Number.isFinite(itemCount ?? Number.NaN) ? itemCount : undefined,
           };
           setState({ list, isLoading: false, error: null });
         } else {
