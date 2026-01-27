@@ -6,6 +6,7 @@ import {
   onSnapshot,
   serverTimestamp,
   type Firestore,
+  type FieldValue,
 } from 'firebase/firestore';
 import type { User, Locale } from '@zusamn/domain';
 import { initFirebase } from '../client';
@@ -88,14 +89,14 @@ export function useUser(
 
         if (!userSnap.exists()) {
           // Create user document if it doesn't exist
-          const newUser: Omit<User, 'createdAt'> & { createdAt: ReturnType<typeof serverTimestamp> } = {
+          const newUser = {
             id: userId,
             displayName: options?.displayName ?? '',
             email: options?.email ?? '',
             avatarUrl: null,
             locale: detectLocale(),
-            createdAt: serverTimestamp() as unknown as ReturnType<typeof serverTimestamp>,
-          };
+            createdAt: serverTimestamp(),
+          } satisfies Omit<User, 'createdAt'> & { createdAt: FieldValue };
 
           await setDoc(userRef, newUser);
         }

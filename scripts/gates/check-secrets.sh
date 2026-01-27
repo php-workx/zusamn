@@ -32,3 +32,4 @@ if ! gitleaks detect --source . --redact --no-banner; then
 fi
 
 echo "  ✓ No secrets found"
+

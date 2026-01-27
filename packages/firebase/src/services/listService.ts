@@ -96,10 +96,22 @@ export async function getUserLists(
   );
   const listsSnapshot = await getDocs(listsQuery);
 
+  // Fetch all memberships in parallel for better performance
+  const membershipPromises = listsSnapshot.docs.map((listDoc) => {
+    const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
+    return getDoc(membershipRef);
+  });
+  const membershipSnapshots = await Promise.all(membershipPromises);
+
   const results: Array<{ list: List; membership: Membership }> = [];
 
-  // For each list, get the user's membership
-  for (const listDoc of listsSnapshot.docs) {
+  // Combine list data with membership data
+  for (let i = 0; i < listsSnapshot.docs.length; i++) {
+    const listDoc = listsSnapshot.docs[i];
+    const membershipSnapshot = membershipSnapshots[i];
+
+    if (!listDoc || !membershipSnapshot) continue;
+
     const listData = listDoc.data();
     const list: List = {
       id: listDoc.id,
@@ -109,10 +121,6 @@ export async function getUserLists(
       itemCount:
         typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
     };
-
-    // Get user's membership document
-    const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
-    const membershipSnapshot = await getDoc(membershipRef);
 
     if (membershipSnapshot.exists()) {
       const membershipData = membershipSnapshot.data();
@@ -154,10 +162,11 @@ export async function getPersonalList(
 ): Promise<{ list: List; membership: Membership } | null> {
   const db = getDb();
 
-  // Query for list where user is the owner
+  // Query for list where user is the owner (limit 1 since each user has at most one personal list)
   const listsQuery = query(
     collection(db, 'lists'),
-    where('ownerUserId', '==', userId)
+    where('ownerUserId', '==', userId),
+    limit(1)
   );
   const listsSnapshot = await getDocs(listsQuery);
 

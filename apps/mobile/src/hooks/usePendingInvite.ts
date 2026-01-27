@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
-import { MMKV } from 'react-native-mmkv';
+import { storage } from '../storage/mmkv';
 
-const storage = new MMKV();
 const PENDING_INVITE_KEY = 'pendingInviteToken';
 
 export interface UsePendingInviteReturn {

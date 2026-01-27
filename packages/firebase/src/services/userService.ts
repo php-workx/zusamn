@@ -1,4 +1,4 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, type DocumentSnapshot } from 'firebase/firestore';
 import { initFirebase } from '../client';
 import type { User } from '@zusamn/domain';
 
@@ -7,6 +7,23 @@ import type { User } from '@zusamn/domain';
  */
 function getDb() {
   return initFirebase().db;
+}
+
+/**
+ * Maps a Firestore document snapshot to a User object.
+ * Extracts fields with sensible defaults.
+ */
+function mapSnapshotToUser(snapshot: DocumentSnapshot): User {
+  const data = snapshot.data() ?? {};
+  return {
+    id: snapshot.id,
+    displayName: data.displayName ?? '',
+    email: data.email ?? '',
+    avatarUrl: data.avatarUrl ?? null,
+    locale: data.locale ?? 'en',
+    createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
+    deletedAt: data.deletedAt?.toMillis?.() ?? data.deletedAt ?? null,
+  };
 }
 
 /**
@@ -24,16 +41,7 @@ export async function getUser(userId: string): Promise<User | null> {
     return null;
   }
 
-  const data = userSnapshot.data();
-  return {
-    id: userSnapshot.id,
-    displayName: data.displayName ?? '',
-    email: data.email ?? '',
-    avatarUrl: data.avatarUrl ?? null,
-    locale: data.locale ?? 'en',
-    createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
-    deletedAt: data.deletedAt?.toMillis?.() ?? data.deletedAt ?? null,
-  };
+  return mapSnapshotToUser(userSnapshot);
 }
 
 /**
@@ -61,16 +69,7 @@ export async function getUsers(userIds: string[]): Promise<User[]> {
       return null;
     }
 
-    const data = userSnapshot.data();
-    return {
-      id: userSnapshot.id,
-      displayName: data.displayName ?? '',
-      email: data.email ?? '',
-      avatarUrl: data.avatarUrl ?? null,
-      locale: data.locale ?? 'en',
-      createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
-      deletedAt: data.deletedAt?.toMillis?.() ?? data.deletedAt ?? null,
-    } as User;
+    return mapSnapshotToUser(userSnapshot);
   });
 
   const results = await Promise.all(userPromises);

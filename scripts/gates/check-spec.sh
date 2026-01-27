@@ -36,8 +36,11 @@ TESTED_FRS=""
 MISSING_FRS=""
 
 for FR in $FR_REQUIREMENTS; do
-  # Search for FR reference in test files
-  FOUND=$(grep -rl "$FR" --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" . 2>/dev/null | grep -v node_modules | head -1 || true)
+  # Search for FR reference in test files (exclude heavy dirs in search itself for performance)
+  FOUND=$(grep -rl "$FR" \
+    --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" \
+    --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build \
+    . 2>/dev/null | head -1 || true)
 
   if [ -n "$FOUND" ]; then
     TESTED_FRS="$TESTED_FRS $FR"

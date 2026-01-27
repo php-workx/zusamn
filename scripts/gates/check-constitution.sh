@@ -125,9 +125,10 @@ if [ -n "$HARDCODED" ]; then
 fi
 
 # Check for accessibility issues (missing labels)
+# Note: This is a heuristic grep-based check that may miss issues where only some handlers lack labels
 A11Y_ISSUES=$(echo "$SOURCE_FILES" | xargs grep -lE "onPress=\{" 2>/dev/null | xargs grep -L "accessible\|accessibilityLabel" 2>/dev/null | head -3 || true)
 if [ -n "$A11Y_ISSUES" ]; then
-  echo "  ⚠️  Possible missing accessibility labels: $A11Y_ISSUES"
+  echo "  ⚠️  Possible missing accessibility labels (heuristic check): $A11Y_ISSUES"
   NEEDS_REVIEW=1
 fi
 

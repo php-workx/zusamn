@@ -49,11 +49,14 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
 
   // Track previous item IDs and their serverUpdatedAt timestamps to detect remote changes
   const previousItemsRef = useRef<Map<string, number>>(new Map());
+  // Track if this is the first snapshot (to avoid marking all items as remotely changed on initial load)
+  const isInitialSnapshotRef = useRef(true);
 
   useEffect(() => {
     if (!listId) {
       setState({ items: [], isLoading: false, error: null, remotelyChangedIds: [] });
       previousItemsRef.current = new Map();
+      isInitialSnapshotRef.current = true;
       return;
     }
 
@@ -89,7 +92,8 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
         // hasPendingWrites === false means the data came from the server (could be our own write confirmed, or remote)
         const remotelyChangedIds: string[] = [];
 
-        if (!snapshot.metadata.hasPendingWrites) {
+        // Skip remote change detection on initial snapshot to avoid marking all items as new
+        if (!snapshot.metadata.hasPendingWrites && !isInitialSnapshotRef.current) {
           const previousItems = previousItemsRef.current;
 
           for (const item of items) {
@@ -103,6 +107,7 @@ export function useItems(listId: string | null | undefined): UseItemsReturn {
             }
           }
         }
+        isInitialSnapshotRef.current = false;
 
         // Update the previous items ref for next comparison
         const newPreviousItems = new Map<string, number>();

@@ -29,7 +29,7 @@ run_gate() {
 
   output=$(eval "$cmd" 2>&1) || exit_code=$?
 
-  # Show last N lines
+  # Show last N lines (name is used for context in caller's output)
   echo "$output" | tail -n "$lines"
 
   return $exit_code

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
 export interface OverflowMenuItem {
+  /** Optional unique identifier for stable React keys */
+  id?: string;
   /** Menu item label */
   label: string;
   /** Called when item is pressed */
@@ -87,7 +89,7 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
           >
             {items.map((item, index) => (
               <XStack
-                key={item.label}
+                key={item.id ?? `${index}-${item.label}`}
                 minHeight={44}
                 paddingHorizontal="$4" // 16px
                 alignItems="center"

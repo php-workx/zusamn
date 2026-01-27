@@ -290,7 +290,10 @@ export default function ListDetailScreen() {
         ? list.itemCount
         : await getItemCount(listId);
     if (count >= MAX_ITEMS_PER_LIST) {
-      // Could show a toast here, for now just return
+      Alert.alert(
+        'List is full',
+        `This list can hold up to ${MAX_ITEMS_PER_LIST} items. Delete some items to add more.`
+      );
       return;
     }
 
@@ -574,6 +577,9 @@ export default function ListDetailScreen() {
   // Key extractor
   const keyExtractor = useCallback((item: Item) => item.id, []);
 
+  // Stable content container style (avoids re-renders from inline object)
+  const flatListContentStyle = { paddingBottom: 100 };
+
   // Loading state
   if (isInitializing || isListLoading) {
     return (
@@ -632,7 +638,7 @@ export default function ListDetailScreen() {
             data={displayItems}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={flatListContentStyle}
             keyboardShouldPersistTaps="handled"
           />
         )}

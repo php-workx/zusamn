@@ -79,8 +79,8 @@ if [ -n "$IN_PROGRESS" ]; then
   exit 1
 fi
 
-# Check the phase epic status
-PHASE_EPIC=$(bd list --status=open 2>/dev/null | grep "$PHASE_PATTERN " | grep "\[epic\]" || true)
+# Check the phase epic status (use word boundary to avoid partial matches)
+PHASE_EPIC=$(bd list --status=open 2>/dev/null | grep -E "${PHASE_PATTERN}([^0-9]|$)" | grep "\[epic\]" || true)
 if [ -n "$PHASE_EPIC" ]; then
   echo "⚠️  Phase epic still open: $PHASE_EPIC"
   echo "   Consider closing the epic if all tasks are done."

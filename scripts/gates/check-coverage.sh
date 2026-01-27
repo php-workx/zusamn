@@ -10,6 +10,10 @@
 
 set -e
 
+# Check for required tools
+command -v jq >/dev/null 2>&1 || { echo "❌ jq is required for coverage parsing"; exit 1; }
+command -v bc >/dev/null 2>&1 || { echo "❌ bc is required for numeric comparisons"; exit 1; }
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$ROOT_DIR"
