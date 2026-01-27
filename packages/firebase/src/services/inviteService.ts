@@ -26,14 +26,11 @@ export type RedeemInviteResult =
     };
 
 /**
- * Generates a UUIDv4.
+ * Generates a cryptographically secure UUIDv4.
+ * Uses the Web Crypto API which is available in modern browsers and Node.js 19+.
  */
 function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+  return crypto.randomUUID();
 }
 
 /**
