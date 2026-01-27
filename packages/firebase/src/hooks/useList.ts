@@ -35,7 +35,7 @@ export function useList(listId: string | null | undefined): UseListReturn {
       return;
     }
 
-    // Reset state when listId changes to avoid showing stale data
+    // Reset to loading state when listId changes to avoid stale data
     setState({ list: null, isLoading: true, error: null });
 
     const db = getFirestoreDb();
@@ -58,9 +58,7 @@ export function useList(listId: string | null | undefined): UseListReturn {
             ownerUserId: data.ownerUserId ?? '',
             memberIds: data.memberIds ?? [],
             createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
-            itemCount: Number.isFinite(itemCount ?? Number.NaN)
-              ? itemCount
-              : undefined,
+            itemCount: Number.isFinite(itemCount ?? Number.NaN) ? itemCount : undefined,
           };
           setState({ list, isLoading: false, error: null });
         } else {

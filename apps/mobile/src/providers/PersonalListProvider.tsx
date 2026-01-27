@@ -1,15 +1,5 @@
-import {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
-import {
-  useUser,
-  getPersonalList,
-  createPersonalList,
-} from '@zusamn/firebase';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { useUser, getPersonalList, createPersonalList } from '@zusamn/firebase';
 import { useAuthContext } from './AuthProvider';
 import { useLastUsedList } from '../hooks';
 
@@ -77,21 +67,14 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
                 }
 
                 try {
-                  const { list } = await createPersonalList(
-                    user.uid,
-                    firestoreUser.locale
-                  );
+                  const { list } = await createPersonalList(user.uid, firestoreUser.locale);
                   if (cancelled) return;
                   setLastUsedListId(list.id);
                   setListId(list.id);
                 } catch (err) {
                   if (cancelled) return;
                   console.error('Failed to recover personal list', err);
-                  setError(
-                    err instanceof Error
-                      ? err
-                      : new Error('Failed to initialize list')
-                  );
+                  setError(err instanceof Error ? err : new Error('Failed to initialize list'));
                   clearLastUsedListId();
                   setListId(null);
                 }
@@ -102,11 +85,7 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
               console.warn('Failed to validate cached personal list', err);
               const cachedListId = getLastUsedListId();
               if (!cachedListId) {
-                setError(
-                  err instanceof Error
-                    ? err
-                    : new Error('Failed to initialize list')
-                );
+                setError(err instanceof Error ? err : new Error('Failed to initialize list'));
               }
             });
           return;
@@ -124,10 +103,7 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
         }
 
         // Create personal list for first-time users
-        const { list: newList } = await createPersonalList(
-          user.uid,
-          firestoreUser.locale
-        );
+        const { list: newList } = await createPersonalList(user.uid, firestoreUser.locale);
         if (cancelled) return;
 
         setListId(newList.id);
@@ -135,9 +111,7 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
         setIsInitializing(false);
       } catch (err) {
         if (cancelled) return;
-        setError(
-          err instanceof Error ? err : new Error('Failed to initialize list')
-        );
+        setError(err instanceof Error ? err : new Error('Failed to initialize list'));
         setIsInitializing(false);
       }
     }
@@ -147,7 +121,14 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid, firestoreUser, isUserLoading, getLastUsedListId, setLastUsedListId, clearLastUsedListId]);
+  }, [
+    user?.uid,
+    firestoreUser,
+    isUserLoading,
+    getLastUsedListId,
+    setLastUsedListId,
+    clearLastUsedListId,
+  ]);
 
   // Reset state when user logs out
   useEffect(() => {
@@ -164,11 +145,7 @@ export function PersonalListProvider({ children }: PersonalListProviderProps) {
     error,
   };
 
-  return (
-    <PersonalListContext.Provider value={value}>
-      {children}
-    </PersonalListContext.Provider>
-  );
+  return <PersonalListContext.Provider value={value}>{children}</PersonalListContext.Provider>;
 }
 
 /**

@@ -5,12 +5,12 @@ import {
   collection,
   query,
   where,
-  limit,
   writeBatch,
+  limit,
   Timestamp,
-  updateDoc,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
+import { generateUUID } from '../utils';
 import type { List, Membership, Locale } from '@zusamn/domain';
 
 /**
@@ -21,50 +21,10 @@ function getDefaultAlias(locale: Locale): string {
 }
 
 /**
- * Generates a unique list ID using Firestore's auto-ID.
- * More secure and collision-resistant than Math.random-based UUIDs.
- */
-function generateListId(): string {
-  const db = getDb();
-  return doc(collection(db, 'lists')).id;
-}
-
-/**
  * Gets the Firestore database instance.
  */
 function getDb() {
   return initFirebase().db;
-}
-
-function toMillis(value: unknown): number {
-  return value && typeof value === 'object' && 'toMillis' in value
-    ? (value as { toMillis: () => number }).toMillis()
-    : ((value as number | undefined | null) ?? Date.now());
-}
-
-async function ensureItemCount(
-  db: ReturnType<typeof getDb>,
-  listDoc: { id: string; data: () => { itemCount?: number }; ref: { path: string } }
-): Promise<number> {
-  const listData = listDoc.data();
-  if (typeof listData.itemCount === 'number') {
-    return listData.itemCount;
-  }
-
-  const itemsRef = collection(db, 'lists', listDoc.id, 'items');
-  const itemsQuery = query(itemsRef, where('deleted', '==', false));
-  const itemsSnapshot = await getDocs(itemsQuery);
-  const count = itemsSnapshot.size;
-
-  try {
-    await updateDoc(doc(db, listDoc.ref.path), { itemCount: count });
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('Failed to backfill list itemCount', error);
-    }
-  }
-
-  return count;
 }
 
 /**
@@ -76,7 +36,7 @@ export async function createPersonalList(
   locale: Locale
 ): Promise<{ list: List; membership: Membership }> {
   const db = getDb();
-  const listId = generateListId();
+  const listId = generateUUID();
   const now = Timestamp.now().toMillis();
   const alias = getDefaultAlias(locale);
 
@@ -130,51 +90,50 @@ export async function getUserLists(
   const db = getDb();
 
   // Query all lists where user is a member
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('memberIds', 'array-contains', userId)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('memberIds', 'array-contains', userId));
   const listsSnapshot = await getDocs(listsQuery);
 
-  // Parallelize membership lookups to avoid N+1 latency
-  const resolved = await Promise.all(
-    listsSnapshot.docs.map(async (listDoc) => {
-      const listData = listDoc.data();
-      const itemCount = await ensureItemCount(db, listDoc);
-      const list: List = {
-        id: listDoc.id,
-        ownerUserId: listData.ownerUserId,
-        memberIds: listData.memberIds,
-        createdAt: toMillis(listData.createdAt),
-        itemCount,
-      };
+  // Fetch all memberships in parallel for better performance
+  const membershipPromises = listsSnapshot.docs.map((listDoc) => {
+    const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
+    return getDoc(membershipRef);
+  });
+  const membershipSnapshots = await Promise.all(membershipPromises);
 
-      const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
-      const membershipSnapshot = await getDoc(membershipRef);
-      if (!membershipSnapshot.exists()) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(
-            `Missing membership for user ${userId} on list ${listDoc.id}; skipping list entry.`
-          );
-        }
-        return null;
-      }
+  const results: Array<{ list: List; membership: Membership }> = [];
 
+  // Combine list data with membership data
+  for (let i = 0; i < listsSnapshot.docs.length; i++) {
+    const listDoc = listsSnapshot.docs[i];
+    const membershipSnapshot = membershipSnapshots[i];
+
+    if (!listDoc || !membershipSnapshot) continue;
+
+    const listData = listDoc.data();
+    const list: List = {
+      id: listDoc.id,
+      ownerUserId: listData.ownerUserId,
+      memberIds: listData.memberIds,
+      createdAt: listData.createdAt,
+      itemCount: typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
+    };
+
+    if (membershipSnapshot.exists()) {
       const membershipData = membershipSnapshot.data();
       const membership: Membership = {
         userId: membershipData.userId,
         listId: membershipData.listId,
         alias: membershipData.alias,
-        joinedAt: toMillis(membershipData.joinedAt),
+        joinedAt: membershipData.joinedAt,
       };
 
-      return { list, membership };
-    })
-  );
-
-  const results = resolved.filter(
-    (item): item is { list: List; membership: Membership } => item !== null
-  );
+      results.push({ list, membership });
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `Missing membership for user ${userId} on list ${listDoc.id}; skipping list entry.`
+      );
+    }
+  }
 
   // Sort: personal list first (ownerUserId === userId), then alphabetically by alias
   results.sort((a, b) => {
@@ -199,12 +158,8 @@ export async function getPersonalList(
 ): Promise<{ list: List; membership: Membership } | null> {
   const db = getDb();
 
-  // Query for list where user is the owner
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('ownerUserId', '==', userId),
-    limit(1)
-  );
+  // Query for list where user is the owner (limit 1 since each user has at most one personal list)
+  const listsQuery = query(collection(db, 'lists'), where('ownerUserId', '==', userId), limit(1));
   const listsSnapshot = await getDocs(listsQuery);
 
   if (listsSnapshot.empty) {
@@ -217,13 +172,12 @@ export async function getPersonalList(
     return null;
   }
   const listData = listDoc.data();
-  const itemCount = await ensureItemCount(db, listDoc);
   const list: List = {
     id: listDoc.id,
     ownerUserId: listData.ownerUserId,
     memberIds: listData.memberIds,
-    createdAt: toMillis(listData.createdAt),
-    itemCount,
+    createdAt: listData.createdAt,
+    itemCount: typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
   };
 
   // Get the user's membership
@@ -232,9 +186,7 @@ export async function getPersonalList(
 
   if (!membershipSnapshot.exists()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        `Missing membership for owner ${userId} on personal list ${listDoc.id}.`
-      );
+      console.warn(`Missing membership for owner ${userId} on personal list ${listDoc.id}.`);
     }
     return null;
   }
@@ -244,7 +196,7 @@ export async function getPersonalList(
     userId: membershipData.userId,
     listId: membershipData.listId,
     alias: membershipData.alias,
-    joinedAt: toMillis(membershipData.joinedAt),
+    joinedAt: membershipData.joinedAt,
   };
 
   return { list, membership };
@@ -257,11 +209,7 @@ export async function getPersonalList(
 export async function hasPersonalList(userId: string): Promise<boolean> {
   const db = getDb();
 
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('ownerUserId', '==', userId),
-    limit(1)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('ownerUserId', '==', userId), limit(1));
   const listsSnapshot = await getDocs(listsQuery);
 
   return !listsSnapshot.empty;

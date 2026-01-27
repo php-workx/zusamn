@@ -18,8 +18,7 @@ export default function DisplayNameScreen() {
 
   const trimmedName = displayName.trim();
   const isValid = trimmedName.length > 0 && trimmedName.length <= 50;
-  const validationError =
-    trimmedName.length > 50 ? 'Name must be 50 characters or less' : null;
+  const validationError = trimmedName.length > 50 ? 'Name must be 50 characters or less' : null;
 
   const handleSave = async () => {
     // Guard against duplicate submissions from rapid taps

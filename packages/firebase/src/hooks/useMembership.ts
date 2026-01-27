@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, type Firestore } from 'firebase/firestore';
 import type { Membership } from '@zusamn/domain';
-import { getFirestoreDb } from '../db';
+import { initFirebase } from '../client';
 
 export interface UseMembershipReturn {
   membership: Membership | null;
   isLoading: boolean;
   error: Error | null;
+}
+
+/**
+ * Get the Firestore instance
+ */
+function getFirestoreDb(): Firestore {
+  const { db } = initFirebase();
+  return db;
 }
 
 /**

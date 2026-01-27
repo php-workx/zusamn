@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useEffect,
   type ReactNode,
 } from 'react';
 import * as Crypto from 'expo-crypto';
@@ -80,6 +81,14 @@ export function ToastProvider({ children }: ToastProviderProps) {
   const toastRef = useRef<ToastState | null>(null);
   // Store onFinalize in a ref to avoid stale closure issues
   const onFinalizeRef = useRef<ToastCallback | undefined>(undefined);
+
+  // Cleanup refs on unmount to prevent stale callbacks
+  useEffect(() => {
+    return () => {
+      onFinalizeRef.current = undefined;
+      toastRef.current = null;
+    };
+  }, []);
 
   const runToastCallback = useCallback((callback: ToastCallback | undefined, label: string) => {
     if (!callback) return;

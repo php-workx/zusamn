@@ -68,6 +68,7 @@
 - `ownerUserId: string` (creator; analytics + potential cleanup; **not used for permissions**)
 - `memberIds: string[]` (**required**; max 3 — used by Security Rules)
 - `createdAt: timestamp (server)`
+- `itemCount: number` (optional; maintained by client transactions)
 
 ### 4.3 Memberships (alias per user)
 `/lists/{listId}/memberships/{userId}`
@@ -261,12 +262,11 @@ match /invites/{inviteId} {
 ### 8.2 Item limit (200)
 - MVP1: **client-enforced only** (rules cannot count cheaply).
 - Implementation:
-  - Query non-deleted items count locally (based on loaded snapshot).
+  - Maintain `itemCount` on list docs and enforce in client transactions.
   - Block creating item if count >= 200.
   - Error UI message: “List full (200 items). Clear checked items to add more.”
 
 **Post-MVP options**
-- Maintain `itemCount` on list doc via Cloud Function triggers.
 - Or accept occasional over-limit and reconcile.
 
 ---

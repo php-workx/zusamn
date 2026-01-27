@@ -1,8 +1,5 @@
 // @vitest-environment node
-import {
-  initializeTestEnvironment,
-  type RulesTestEnvironment,
-} from '@firebase/rules-unit-testing';
+import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, it, expect } from 'vitest';
@@ -72,42 +69,30 @@ describe('deleteAccountWithDb', () => {
         createdAt: Date.now(),
       });
 
-      await setDoc(
-        doc(adminDb, 'lists', personalListId, 'memberships', userId),
-        {
-          alias: 'Personal',
-          userId,
-          listId: personalListId,
-          joinedAt: Timestamp.now(),
-        }
-      );
+      await setDoc(doc(adminDb, 'lists', personalListId, 'memberships', userId), {
+        alias: 'Personal',
+        userId,
+        listId: personalListId,
+        joinedAt: Timestamp.now(),
+      });
 
-      await setDoc(
-        doc(adminDb, 'lists', sharedListId, 'memberships', userId),
-        {
-          alias: 'Shared',
-          userId,
-          listId: sharedListId,
-          joinedAt: Timestamp.now(),
-        }
-      );
+      await setDoc(doc(adminDb, 'lists', sharedListId, 'memberships', userId), {
+        alias: 'Shared',
+        userId,
+        listId: sharedListId,
+        joinedAt: Timestamp.now(),
+      });
 
-      await setDoc(
-        doc(adminDb, 'lists', sharedListId, 'memberships', otherUserId),
-        {
-          alias: 'Shared',
-          userId: otherUserId,
-          listId: sharedListId,
-          joinedAt: Timestamp.now(),
-        }
-      );
+      await setDoc(doc(adminDb, 'lists', sharedListId, 'memberships', otherUserId), {
+        alias: 'Shared',
+        userId: otherUserId,
+        listId: sharedListId,
+        joinedAt: Timestamp.now(),
+      });
     });
 
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      await deleteAccountWithDb(
-        context.firestore() as unknown as Firestore,
-        userId
-      );
+      await deleteAccountWithDb(context.firestore() as unknown as Firestore, userId);
     });
 
     await testEnv.withSecurityRulesDisabled(async (context) => {
@@ -140,9 +125,7 @@ describe('deleteAccountWithDb', () => {
       expect(sharedList.exists()).toBe(true);
       expect(sharedList.data()?.memberIds).toEqual([otherUserId]);
 
-      const membershipQuery = await getDocs(
-        collectionGroup(adminDb, 'memberships')
-      );
+      const membershipQuery = await getDocs(collectionGroup(adminDb, 'memberships'));
       const membershipIds = membershipQuery.docs.map((docSnap) => docSnap.id);
       expect(membershipIds).toEqual([otherUserId]);
 

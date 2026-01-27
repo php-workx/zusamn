@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Portal, Text, XStack, YStack } from 'tamagui';
+import { Text, XStack, YStack } from 'tamagui';
 
 export interface OverflowMenuItem {
+  /** Optional unique identifier for stable React keys */
+  id?: string;
   /** Menu item label */
   label: string;
   /** Called when item is pressed */
@@ -36,7 +38,7 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
         minHeight={44}
         alignItems="center"
         justifyContent="center"
-        onPress={() => setIsOpen((prev) => !prev)}
+        onPress={() => setIsOpen(!isOpen)}
         pressStyle={{ opacity: 0.6 }}
         accessible
         accessibilityRole="button"
@@ -53,11 +55,16 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
         </Text>
       </XStack>
 
+      {/* Menu popover */}
       {isOpen && (
-        <Portal>
+        <>
           {/* Backdrop to close menu */}
           <YStack
-            fullscreen
+            position="absolute"
+            top={-1000}
+            left={-1000}
+            right={-1000}
+            bottom={-1000}
             zIndex={1000}
             onPress={() => setIsOpen(false)}
           />
@@ -79,12 +86,10 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
             shadowOpacity={0.15}
             shadowRadius={8}
             elevation={4}
-            accessible
-            accessibilityRole="menu"
           >
             {items.map((item, index) => (
               <XStack
-                key={`${index}-${item.label}`}
+                key={item.id ?? `${index}-${item.label}`}
                 minHeight={44}
                 paddingHorizontal="$4" // 16px
                 alignItems="center"
@@ -106,7 +111,7 @@ export function OverflowMenu({ items }: OverflowMenuProps) {
               </XStack>
             ))}
           </YStack>
-        </Portal>
+        </>
       )}
     </YStack>
   );

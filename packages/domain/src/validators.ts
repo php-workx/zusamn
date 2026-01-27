@@ -25,7 +25,10 @@ export function validateItemText(text: string): ValidationResult {
     return { valid: false, error: 'Item text cannot be empty' };
   }
   if (trimmed.length > MAX_TEXT_LENGTH) {
-    return { valid: false, error: `Item text exceeds maximum length of ${MAX_TEXT_LENGTH} characters` };
+    return {
+      valid: false,
+      error: `Item text exceeds maximum length of ${MAX_TEXT_LENGTH} characters`,
+    };
   }
   return { valid: true };
 }

@@ -3,11 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "packageManager": "pnpm@10.27.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "firebase/functions"
-  ],
+  "workspaces": ["apps/*", "packages/*", "firebase/functions"],
   "scripts": {
     "dev": "turbo dev",
     "lint": "turbo lint",
@@ -15,7 +11,25 @@
     "format:check": "turbo format:check",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "build": "turbo build"
+    "test:unit": "vitest run",
+    "test:emulator": "vitest run --config vitest.emulator.config.ts",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "build": "turbo build",
+    "build:web": "turbo build --filter=@zusamn/web",
+    "deploy:web": "pnpm build:web && firebase deploy --only hosting",
+    "gate:commit": "./scripts/gates/pre-commit.sh",
+    "gate:push": "./scripts/gates/pre-push.sh",
+    "gate:coverage": "./scripts/gates/check-coverage.sh",
+    "gate:secrets": "./scripts/gates/check-secrets.sh",
+    "gate:beads": "./scripts/gates/check-beads.sh",
+    "gate:constitution": "./scripts/gates/check-constitution.sh",
+    "gate:spec": "./scripts/gates/check-spec.sh",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": ["biome lint --write", "biome format --write"],
+    "*.{json,md}": ["biome format --write"]
   },
   "pnpm": {
     "overrides": {
@@ -36,6 +50,8 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitest/coverage-v8": "^3.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "turbo": "^2.7.0",
     "typescript": "^5.6.3",
     "vitest": "^3.0.0"

@@ -45,9 +45,7 @@ export default function AccountScreen() {
     try {
       await deleteAccount(user.uid);
     } catch (error) {
-      setDeleteError(
-        error instanceof Error ? error.message : 'Failed to delete account.'
-      );
+      setDeleteError(error instanceof Error ? error.message : 'Failed to delete account.');
     } finally {
       setIsDeleting(false);
     }

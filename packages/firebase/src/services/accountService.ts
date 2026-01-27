@@ -1,3 +1,5 @@
+import { deleteUser } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import {
   arrayRemove,
   collection,
@@ -8,71 +10,108 @@ import {
   writeBatch,
   type Firestore,
 } from 'firebase/firestore';
-import { FirebaseError } from 'firebase/app';
-import { deleteUser } from 'firebase/auth';
 import { initFirebase } from '../client';
 import { signOut } from '../auth';
+import { getUser } from './userService';
 
-const isReauthRequiredError = (error: unknown): boolean =>
-  error instanceof FirebaseError && error.code === 'auth/requires-recent-login';
+// Re-export for backwards compatibility
+export { getUser as getUserById } from './userService';
 
-export async function deleteAccountWithDb(
-  db: Firestore,
-  userId: string
-): Promise<void> {
+function isReauthRequiredError(error: unknown): boolean {
+  return error instanceof FirebaseError && error.code === 'auth/requires-recent-login';
+}
+
+/**
+ * Deletes a user account and cleans up all associated data.
+ * - Removes user's memberships from all lists
+ * - Updates shared lists to remove user from memberIds
+ * - Soft-deletes personal lists (deleted=true, memberIds=[])
+ * - Deletes user document
+ *
+ * @param db - Firestore database instance
+ * @param userId - The ID of the user to delete
+ */
+export async function deleteAccountWithDb(db: Firestore, userId: string): Promise<void> {
   if (!userId) {
     throw new Error('User ID is required');
   }
 
-  const listQuery = query(
-    collection(db, 'lists'),
-    where('memberIds', 'array-contains', userId)
-  );
-  const listSnapshot = await getDocs(listQuery);
+  // Find all lists where user is a member
+  const listsQuery = query(collection(db, 'lists'), where('memberIds', 'array-contains', userId));
+  const listsSnapshot = await getDocs(listsQuery);
+
   const batch = writeBatch(db);
 
-  for (const docSnap of listSnapshot.docs) {
-    const data = docSnap.data() as { ownerUserId?: string; memberIds?: string[] };
-    const memberIds = Array.isArray(data.memberIds) ? data.memberIds : [];
-    const isPersonal =
-      data.ownerUserId === userId &&
-      memberIds.length === 1 &&
-      memberIds[0] === userId;
+  // Process each list
+  for (const listDoc of listsSnapshot.docs) {
+    const listData = listDoc.data();
+    const listRef = doc(db, 'lists', listDoc.id);
+    const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
 
-    const listUpdates: Record<string, unknown> = {
-      memberIds: arrayRemove(userId),
-    };
-    if (isPersonal) {
-      listUpdates.deleted = true;
+    // Delete user's membership
+    batch.delete(membershipRef);
+
+    if (listData.ownerUserId === userId) {
+      // Personal list: soft-delete and clear members
+      batch.update(listRef, {
+        deleted: true,
+        memberIds: [],
+      });
+    } else {
+      // Shared list: remove user from memberIds
+      batch.update(listRef, {
+        memberIds: arrayRemove(userId),
+      });
     }
-    batch.update(docSnap.ref, listUpdates);
-    batch.delete(doc(db, 'lists', docSnap.id, 'memberships', userId));
   }
 
-  batch.delete(doc(db, 'users', userId));
+  // Delete user document
+  const userRef = doc(db, 'users', userId);
+  batch.delete(userRef);
 
   await batch.commit();
 }
 
 export async function deleteAccount(userId: string): Promise<void> {
-  const { db, auth } = initFirebase();
+  const { auth, db } = initFirebase();
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    throw new Error('No authenticated user.');
-  }
-  if (currentUser.uid !== userId) {
-    throw new Error('Authenticated user does not match requested account.');
+    throw new Error('No authenticated user');
   }
 
-  await deleteAccountWithDb(db, currentUser.uid);
+  // Validate that the requested userId matches the authenticated user
+  // to prevent accidental or malicious mismatched deletions
+  if (currentUser.uid !== userId) {
+    throw new Error(
+      `User ID mismatch: authenticated as ${currentUser.uid} but requested to delete ${userId}`
+    );
+  }
+
+  // Delete Firebase Auth user first - if this fails (e.g., requires-recent-login),
+  // we haven't touched Firestore data yet, leaving the account in a consistent state.
+  // If Auth deletion succeeds but Firestore cleanup fails, the user can't log in anyway,
+  // and orphaned data can be cleaned up via scheduled jobs or manual intervention.
   try {
     await deleteUser(currentUser);
   } catch (error) {
     if (isReauthRequiredError(error)) {
       throw error;
     }
-    await signOut();
-    throw error;
+    throw error instanceof Error ? error : new Error('Failed to delete account');
   }
+
+  // Clean up Firestore data after Auth deletion succeeds
+  try {
+    await deleteAccountWithDb(db, currentUser.uid);
+  } catch (error) {
+    // Auth user already deleted - Firestore cleanup failed but user can't log in.
+    // Orphaned data can be cleaned up later via scheduled jobs.
+    console.error(
+      'Firestore cleanup failed after Auth deletion. Orphaned userId:',
+      currentUser.uid,
+      error
+    );
+  }
+
   await signOut();
 }

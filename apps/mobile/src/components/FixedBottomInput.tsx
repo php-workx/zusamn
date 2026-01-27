@@ -9,8 +9,6 @@ export interface FixedBottomInputProps {
   onChangeText: (text: string) => void;
   /** Called when submit button pressed or keyboard done */
   onSubmit: () => void;
-  /** Keyboard vertical offset for different screen contexts */
-  keyboardVerticalOffset?: number;
   /** Placeholder text for input */
   placeholder?: string;
   /** Maximum character length (default: 100) */
@@ -19,6 +17,10 @@ export interface FixedBottomInputProps {
   disabled?: boolean;
   /** Reference to input for programmatic focus */
   inputRef?: RefObject<TextInput>;
+  /** Called when input receives focus */
+  onFocus?: () => void;
+  /** Called when input loses focus */
+  onBlur?: () => void;
 }
 
 /**
@@ -30,24 +32,26 @@ export function FixedBottomInput({
   value,
   onChangeText,
   onSubmit,
-  keyboardVerticalOffset = 0,
   placeholder = 'Add item...',
   maxLength = 100,
   disabled = false,
   inputRef,
+  onFocus,
+  onBlur,
 }: FixedBottomInputProps) {
-  // Unified disabled state for consistency
   const isSubmitDisabled = disabled || !value.trim();
 
   const handleSubmit = () => {
-    if (isSubmitDisabled) return;
-    onSubmit();
+    // Only submit if there's non-whitespace content
+    if (value.trim()) {
+      onSubmit();
+    }
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={keyboardVerticalOffset}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       style={styles.container}
     >
       <YStack
@@ -72,6 +76,8 @@ export function FixedBottomInput({
             maxLength={maxLength}
             disabled={disabled}
             onSubmitEditing={handleSubmit}
+            onFocus={onFocus}
+            onBlur={onBlur}
             returnKeyType="done"
             blurOnSubmit={false}
             flex={1}

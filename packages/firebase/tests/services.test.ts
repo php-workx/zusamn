@@ -1,356 +1,120 @@
-import {
-  initializeTestEnvironment,
-  type RulesTestEnvironment,
-} from '@firebase/rules-unit-testing';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-// Import services - need to mock initFirebase for testing
-import {
-  addItem,
-  getItemCount,
-  toggleItemChecked,
-  softDeleteItem,
-  undeleteItem,
-  bulkSoftDelete,
-  bulkUndelete,
-} from '../src/services/itemService';
-import {
-  createPersonalList,
-  getUserLists,
-  getPersonalList,
-  hasPersonalList,
-} from '../src/services/listService';
+// Mock generateUUID for deterministic tests
+const mockListId = 'mock-list-id-123';
+vi.mock('../src/utils/generateUUID', () => ({
+  generateUUID: () => mockListId,
+}));
 
-const PROJECT_ID = 'zusamn-test';
-const rulesPath = resolve(__dirname, '../../../firebase/firestore.rules');
-const rules = readFileSync(rulesPath, 'utf8');
-
-let testEnv: RulesTestEnvironment;
-
-// Mock initFirebase to use test environment
-let mockDb: ReturnType<RulesTestEnvironment['unauthenticatedContext']>['firestore'] extends () => infer R ? R : never;
-
-beforeAll(async () => {
-  testEnv = await initializeTestEnvironment({
-    projectId: PROJECT_ID,
-    firestore: {
-      rules,
-      host: 'localhost',
-      port: 8080,
-    },
+const firestoreMocks = vi.hoisted(() => {
+  const setMock = vi.fn();
+  const commitMock = vi.fn().mockResolvedValue(undefined);
+  const writeBatchMock = vi.fn(() => ({
+    set: setMock,
+    commit: commitMock,
+  }));
+  const docMock = vi.fn((...segments: unknown[]) => {
+    const stringSegments = segments.filter(
+      (segment): segment is string => typeof segment === 'string'
+    );
+    return {
+      path: stringSegments.join('/'),
+      id: stringSegments[stringSegments.length - 1],
+    };
   });
+
+  return { setMock, commitMock, writeBatchMock, docMock };
 });
 
-afterAll(async () => {
-  await testEnv.cleanup();
-});
+vi.mock('firebase/firestore', () => ({
+  doc: firestoreMocks.docMock,
+  writeBatch: firestoreMocks.writeBatchMock,
+  Timestamp: {
+    now: () => ({
+      toMillis: () => 1_701_234_567_890,
+    }),
+  },
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+}));
 
-beforeEach(async () => {
-  await testEnv.clearFirestore();
-});
+vi.mock('../src/client', () => ({
+  initFirebase: () => ({ db: { name: 'test-db' } }),
+}));
 
-// ============================================
-// LIST SERVICE TESTS
-// ============================================
+import { createPersonalList } from '../src/services/listService';
+
 describe('listService', () => {
+  beforeEach(() => {
+    firestoreMocks.setMock.mockClear();
+    firestoreMocks.commitMock.mockClear();
+    firestoreMocks.docMock.mockClear();
+    firestoreMocks.writeBatchMock.mockClear();
+  });
+
   describe('createPersonalList', () => {
-    it.skip('creates list with German alias for de locale', async () => {
-      // TODO: mock initFirebase to use testEnv.firestore() and call createPersonalList
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-        const userId = 'test-user';
+    it('FR-AUTH-003, FR-AUTH-004: creates a personal list and membership with defaults for en locale', async () => {
+      const result = await createPersonalList('user-123', 'en');
 
-        await setDoc(doc(db, 'users', userId), {
-          displayName: 'Test User',
-          email: 'test@example.com',
-          locale: 'de',
-          createdAt: Date.now(),
-        });
+      expect(result.list.id).toBe(mockListId);
+      expect(result.list.ownerUserId).toBe('user-123');
+      expect(result.list.memberIds).toEqual(['user-123']);
+      expect(result.list.itemCount).toBe(0);
+
+      expect(result.membership.userId).toBe('user-123');
+      expect(result.membership.listId).toBe(result.list.id);
+      expect(result.membership.alias).toBe('Shopping');
+
+      expect(firestoreMocks.writeBatchMock).toHaveBeenCalledTimes(1);
+      expect(firestoreMocks.setMock).toHaveBeenCalledTimes(2);
+      expect(firestoreMocks.commitMock).toHaveBeenCalledTimes(1);
+
+      // Verify list data payload
+      const listCall = firestoreMocks.setMock.mock.calls.find(
+        (call) => (call[0] as { path: string })?.path === `lists/${mockListId}`
+      ) as unknown[];
+      expect(listCall).toBeTruthy();
+      expect(listCall[1]).toMatchObject({
+        ownerUserId: 'user-123',
+        memberIds: ['user-123'],
+        itemCount: 0,
       });
 
-      await createPersonalList('test-user', 'de');
-    });
-  });
-
-  describe('hasPersonalList', () => {
-    it('returns false when user has no lists', async () => {
-      // Verify empty state
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-        const userId = 'test-user';
-
-        // Query for lists
-        const listsRef = doc(db, 'lists', 'nonexistent');
-        const snapshot = await getDoc(listsRef);
-        expect(snapshot.exists()).toBe(false);
-      });
-    });
-
-    it('returns true when user owns a list', async () => {
-      const userId = 'test-user';
-      const listId = 'test-list';
-
-      // All operations in single callback to ensure data persistence
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-
-        // Create a list owned by the user
-        await setDoc(doc(db, 'lists', listId), {
-          ownerUserId: userId,
-          memberIds: [userId],
-          createdAt: Date.now(),
-        });
-
-        // Create membership
-        await setDoc(doc(db, 'lists', listId, 'memberships', userId), {
-          userId,
-          listId,
-          alias: 'Shopping',
-          joinedAt: Date.now(),
-        });
-
-        // Verify the list was created
-        const listDoc = await getDoc(doc(db, 'lists', listId));
-        expect(listDoc.exists()).toBe(true);
-        expect(listDoc.data()?.ownerUserId).toBe(userId);
-      });
-    });
-  });
-});
-
-// ============================================
-// ITEM SERVICE TESTS (using direct Firestore access)
-// ============================================
-describe('itemService (via Firestore)', () => {
-  const listId = 'test-list';
-  const userId = 'test-user';
-
-  // Helper to create list within a callback
-  async function createTestList(db: ReturnType<ReturnType<typeof testEnv.unauthenticatedContext>['firestore']>) {
-    await setDoc(doc(db, 'lists', listId), {
-      ownerUserId: userId,
-      memberIds: [userId],
-      createdAt: Date.now(),
-      itemCount: 0,
-    });
-  }
-
-  describe('item CRUD operations', () => {
-    it('can create and read an item', async () => {
-      const itemId = 'test-item';
-
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-        await createTestList(db);
-
-        // Create item
-        await setDoc(doc(db, 'lists', listId, 'items', itemId), {
-          listId,
-          text: 'Milk',
-          checked: false,
-          deleted: false,
-          createdByUserId: userId,
-          serverCreatedAt: Date.now(),
-          serverUpdatedAt: Date.now(),
-        });
-
-        // Read item
-        const itemDoc = await getDoc(doc(db, 'lists', listId, 'items', itemId));
-        expect(itemDoc.exists()).toBe(true);
-        expect(itemDoc.data()?.text).toBe('Milk');
-        expect(itemDoc.data()?.checked).toBe(false);
+      // Verify membership data payload
+      const membershipCall = firestoreMocks.setMock.mock.calls.find(
+        (call) => (call[0] as { path: string })?.path === `lists/${mockListId}/memberships/user-123`
+      ) as unknown[];
+      expect(membershipCall).toBeTruthy();
+      expect(membershipCall[1]).toMatchObject({
+        userId: 'user-123',
+        listId: mockListId,
+        alias: 'Shopping',
       });
     });
 
-    it('can toggle item checked state', async () => {
-      const itemId = 'test-item';
+    it('creates a personal list with German default alias for de locale', async () => {
+      const result = await createPersonalList('user-456', 'de');
 
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-        await createTestList(db);
-        const itemRef = doc(db, 'lists', listId, 'items', itemId);
+      expect(result.list.id).toBe(mockListId);
+      expect(result.membership.alias).toBe('Einkaufen');
 
-        // Create item
-        await setDoc(itemRef, {
-          listId,
-          text: 'Milk',
-          checked: false,
-          deleted: false,
-          createdByUserId: userId,
-          serverCreatedAt: Date.now(),
-          serverUpdatedAt: Date.now(),
-        });
-
-        // Verify item was created
-        const created = await getDoc(itemRef);
-        expect(created.exists()).toBe(true);
-        expect(created.data()?.checked).toBe(false);
-
-        // Update to checked
-        await setDoc(itemRef, { checked: true }, { merge: true });
-
-        const after = await getDoc(itemRef);
-        expect(after.exists()).toBe(true);
-        expect(after.data()?.checked).toBe(true);
+      // Verify membership data payload has German alias
+      const membershipCall = firestoreMocks.setMock.mock.calls.find(
+        (call) => (call[0] as { path: string })?.path === `lists/${mockListId}/memberships/user-456`
+      ) as unknown[];
+      expect(membershipCall).toBeTruthy();
+      expect(membershipCall[1]).toMatchObject({
+        alias: 'Einkaufen',
       });
     });
 
-    it('can soft delete and restore an item', async () => {
-      const itemId = 'test-item';
+    it('throws error when batch commit fails', async () => {
+      firestoreMocks.commitMock.mockRejectedValueOnce(new Error('Firestore unavailable'));
 
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-        await createTestList(db);
-        const itemRef = doc(db, 'lists', listId, 'items', itemId);
-
-        // Create item
-        await setDoc(itemRef, {
-          listId,
-          text: 'Milk',
-          checked: false,
-          deleted: false,
-          createdByUserId: userId,
-          serverCreatedAt: Date.now(),
-          serverUpdatedAt: Date.now(),
-        });
-
-        // Verify item was created
-        const created = await getDoc(itemRef);
-        expect(created.exists()).toBe(true);
-        expect(created.data()?.deleted).toBe(false);
-
-        // Soft delete
-        await setDoc(itemRef, { deleted: true }, { merge: true });
-        const deleted = await getDoc(itemRef);
-        expect(deleted.exists()).toBe(true);
-        expect(deleted.data()?.deleted).toBe(true);
-
-        // Restore
-        await setDoc(itemRef, { deleted: false }, { merge: true });
-        const restored = await getDoc(itemRef);
-        expect(restored.exists()).toBe(true);
-        expect(restored.data()?.deleted).toBe(false);
-      });
-    });
-
-    it('can count non-deleted items', async () => {
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-        await createTestList(db);
-
-        // Create 3 items, 1 deleted - with diagnostic verifications
-        const item1Ref = doc(db, 'lists', listId, 'items', 'item1');
-        await setDoc(item1Ref, {
-          listId,
-          text: 'Item 1',
-          checked: false,
-          deleted: false,
-          createdByUserId: userId,
-          serverCreatedAt: Date.now(),
-          serverUpdatedAt: Date.now(),
-        });
-        // Verify item1 was written
-        const item1Doc = await getDoc(item1Ref);
-        expect(item1Doc.exists()).toBe(true);
-        expect(item1Doc.data()?.deleted).toBe(false);
-
-        const item2Ref = doc(db, 'lists', listId, 'items', 'item2');
-        await setDoc(item2Ref, {
-          listId,
-          text: 'Item 2',
-          checked: false,
-          deleted: false,
-          createdByUserId: userId,
-          serverCreatedAt: Date.now(),
-          serverUpdatedAt: Date.now(),
-        });
-        // Verify item2 was written
-        const item2Doc = await getDoc(item2Ref);
-        expect(item2Doc.exists()).toBe(true);
-        expect(item2Doc.data()?.deleted).toBe(false);
-
-        const item3Ref = doc(db, 'lists', listId, 'items', 'item3');
-        await setDoc(item3Ref, {
-          listId,
-          text: 'Item 3 (deleted)',
-          checked: false,
-          deleted: true,
-          createdByUserId: userId,
-          serverCreatedAt: Date.now(),
-          serverUpdatedAt: Date.now(),
-        });
-        // Verify item3 was written
-        const item3Doc = await getDoc(item3Ref);
-        expect(item3Doc.exists()).toBe(true);
-        expect(item3Doc.data()?.deleted).toBe(true);
-
-        // Count non-deleted items manually (query/where has issues in test environment)
-        const itemIds = ['item1', 'item2', 'item3'];
-        let nonDeletedCount = 0;
-        for (const id of itemIds) {
-          const itemDoc = await getDoc(doc(db, 'lists', listId, 'items', id));
-          if (itemDoc.exists() && itemDoc.data()?.deleted === false) {
-            nonDeletedCount++;
-          }
-        }
-
-        expect(nonDeletedCount).toBe(2);
-      });
-    });
-
-    it('can bulk delete and restore items', async () => {
-      await testEnv.withSecurityRulesDisabled(async (context) => {
-        const db = context.firestore();
-        await createTestList(db);
-
-        // Verify list was created
-        const listDoc = await getDoc(doc(db, 'lists', listId));
-        expect(listDoc.exists()).toBe(true);
-
-        // Create items with immediate verification after each
-        const itemIds = ['item1', 'item2'];
-        for (const id of itemIds) {
-          const itemRef = doc(db, 'lists', listId, 'items', id);
-          await setDoc(itemRef, {
-            listId,
-            text: `Item ${id}`,
-            checked: true,
-            deleted: false,
-            createdByUserId: userId,
-            serverCreatedAt: Date.now(),
-            serverUpdatedAt: Date.now(),
-          });
-
-          // Immediately verify each item was written
-          const itemDoc = await getDoc(itemRef);
-          expect(itemDoc.exists()).toBe(true);
-          expect(itemDoc.data()?.text).toBe(`Item ${id}`);
-          expect(itemDoc.data()?.deleted).toBe(false);
-        }
-
-        // Bulk delete using setDoc with merge, with verification after each
-        for (const id of itemIds) {
-          const itemRef = doc(db, 'lists', listId, 'items', id);
-          await setDoc(itemRef, { deleted: true }, { merge: true });
-          // Verify immediately after update
-          const itemDoc = await getDoc(itemRef);
-          expect(itemDoc.exists()).toBe(true);
-          expect(itemDoc.data()?.deleted).toBe(true);
-        }
-
-        // Bulk restore using setDoc with merge, with verification after each
-        for (const id of itemIds) {
-          const itemRef = doc(db, 'lists', listId, 'items', id);
-          await setDoc(itemRef, { deleted: false }, { merge: true });
-          // Verify immediately after update
-          const itemDoc = await getDoc(itemRef);
-          expect(itemDoc.exists()).toBe(true);
-          expect(itemDoc.data()?.deleted).toBe(false);
-        }
-      });
+      await expect(createPersonalList('user-789', 'en')).rejects.toThrow('Firestore unavailable');
     });
   });
 });

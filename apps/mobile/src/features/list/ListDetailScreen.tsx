@@ -2,15 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import {
-  ConfirmDialog,
-  EmptyState,
-  OverflowMenu,
-  Screen,
-  Text,
-  TopBar,
-  YStack,
-} from '@zusamn/ui';
+import { ConfirmDialog, EmptyState, OverflowMenu, Screen, Text, TopBar, YStack } from '@zusamn/ui';
 import {
   useItems,
   useList,
@@ -142,17 +134,10 @@ export function ListDetailScreen({ listId }: ListDetailScreenProps) {
 
         {items.length === 0 && !isItemsLoading ? (
           <YStack flex={1} justifyContent="center" paddingBottom={100}>
-            <EmptyState
-              message="Your list is empty"
-              description="Add your first item below"
-            />
+            <EmptyState message="Your list is empty" description="Add your first item below" />
           </YStack>
         ) : (
-          <ItemList
-            listId={listId}
-            items={items}
-            onWritePending={markWritePending}
-          />
+          <ItemList listId={listId} items={items} onWritePending={markWritePending} />
         )}
 
         {user?.uid && (

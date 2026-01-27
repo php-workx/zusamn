@@ -82,16 +82,7 @@ export function ConfirmDialog({
       ],
       { cancelable: true, onDismiss: onCancel }
     );
-  }, [
-    visible,
-    title,
-    description,
-    cancelLabel,
-    confirmLabel,
-    destructive,
-    onCancel,
-    onConfirm,
-  ]);
+  }, [visible, title, description, cancelLabel, confirmLabel, destructive, onCancel, onConfirm]);
 
   return null;
 }

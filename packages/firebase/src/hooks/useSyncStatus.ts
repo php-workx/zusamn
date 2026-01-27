@@ -7,7 +7,7 @@ export interface SyncStatus {
   hasPendingWrites: boolean;
   /** Manually mark that a write operation has started */
   markWritePending: () => void;
-  /** Manually clear pending write state */
+  /** Manually clear pending write state (e.g., on error) */
   clearWritePending: () => void;
 }
 
@@ -73,8 +73,8 @@ export function useSyncStatus(): SyncStatus {
     syncTimeoutRef.current = setTimeout(() => {
       // After 30 seconds, assume sync is complete or offline
       // The offline indicator should take precedence in that case
-      setHasPendingWrites(false);
       syncTimeoutRef.current = null;
+      setHasPendingWrites(false);
     }, 30000);
   }, []);
 

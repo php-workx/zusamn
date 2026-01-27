@@ -41,7 +41,9 @@ export function PrimaryButton({
       opacity={isDisabled ? 0.5 : 1}
       accessible
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
+      accessibilityLabel={
+        accessibilityLabel || (typeof children === 'string' ? children : undefined)
+      }
       accessibilityState={{ disabled: isDisabled }}
     >
       <Text

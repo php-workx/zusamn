@@ -6,6 +6,7 @@ import {
   type Unsubscribe,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   signInWithCredential,
+  signInWithPopup,
   signOut as firebaseSignOut,
   updateProfile,
 } from 'firebase/auth';
@@ -51,9 +52,7 @@ export function getFirebaseAuth(): Auth {
  * Subscribe to auth state changes.
  * Returns an unsubscribe function.
  */
-export function onAuthStateChanged(
-  callback: (user: AuthUser | null) => void
-): Unsubscribe {
+export function onAuthStateChanged(callback: (user: AuthUser | null) => void): Unsubscribe {
   const auth = getFirebaseAuth();
   return firebaseOnAuthStateChanged(auth, (firebaseUser) => {
     callback(firebaseUser ? toAuthUser(firebaseUser) : null);
@@ -75,10 +74,7 @@ export async function signInWithGoogle(idToken: string): Promise<AuthUser> {
  * Sign in with Apple using an identity token from expo-auth-session.
  * The identityToken should come from Apple OAuth via expo-apple-authentication.
  */
-export async function signInWithApple(
-  identityToken: string,
-  nonce?: string
-): Promise<AuthUser> {
+export async function signInWithApple(identityToken: string, nonce?: string): Promise<AuthUser> {
   const auth = getFirebaseAuth();
   const provider = new OAuthProvider('apple.com');
   const credential = provider.credential({
@@ -95,6 +91,30 @@ export async function signInWithApple(
 export async function signOut(): Promise<void> {
   const auth = getFirebaseAuth();
   await firebaseSignOut(auth);
+}
+
+/**
+ * Sign in with Google using a popup window.
+ * This is the preferred method for web applications.
+ */
+export async function signInWithGooglePopup(): Promise<AuthUser> {
+  const auth = getFirebaseAuth();
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  return toAuthUser(result.user);
+}
+
+/**
+ * Sign in with Apple using a popup window.
+ * This is the preferred method for web applications.
+ */
+export async function signInWithApplePopup(): Promise<AuthUser> {
+  const auth = getFirebaseAuth();
+  const provider = new OAuthProvider('apple.com');
+  provider.addScope('email');
+  provider.addScope('name');
+  const result = await signInWithPopup(auth, provider);
+  return toAuthUser(result.user);
 }
 
 /**

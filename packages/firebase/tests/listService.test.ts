@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getDocsMock = vi.fn();
 const getDocMock = vi.fn();
@@ -61,6 +61,13 @@ beforeEach(() => {
   });
 
   timestampNowMock.mockReturnValue(1234567890);
+
+  // Mock crypto.randomUUID for predictable list IDs
+  vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'list-1') });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('listService', () => {
@@ -132,16 +139,18 @@ describe('listService', () => {
     const { getPersonalList } = await loadListService();
     getDocsMock.mockResolvedValueOnce({
       empty: false,
-      docs: [{
-        id: 'list-personal',
-        data: () => ({
-          ownerUserId: 'user-1',
-          memberIds: ['user-1'],
-          createdAt: 1,
-          itemCount: 0,
-        }),
-        ref: { path: 'lists/list-personal' },
-      }],
+      docs: [
+        {
+          id: 'list-personal',
+          data: () => ({
+            ownerUserId: 'user-1',
+            memberIds: ['user-1'],
+            createdAt: 1,
+            itemCount: 0,
+          }),
+          ref: { path: 'lists/list-personal' },
+        },
+      ],
     });
     getDocMock.mockResolvedValueOnce({ exists: () => false });
 

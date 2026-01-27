@@ -67,23 +67,20 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
-  const signInWithApple = useCallback(
-    async (identityToken: string, nonce?: string) => {
-      setState((prev) => ({ ...prev, isLoading: true, error: null }));
-      try {
-        const user = await firebaseSignInWithApple(identityToken, nonce);
-        setState({ user, isLoading: false, error: null });
-      } catch (error) {
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error : new Error('Sign in failed'),
-        }));
-        throw error;
-      }
-    },
-    []
-  );
+  const signInWithApple = useCallback(async (identityToken: string, nonce?: string) => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    try {
+      const user = await firebaseSignInWithApple(identityToken, nonce);
+      setState({ user, isLoading: false, error: null });
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error : new Error('Sign in failed'),
+      }));
+      throw error;
+    }
+  }, []);
 
   const signOut = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));

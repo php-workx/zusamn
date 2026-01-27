@@ -46,17 +46,22 @@ beforeEach(() => {
   docMock.mockImplementation(() => ({ id: 'item-1' }));
   serverTimestampMock.mockReturnValue('server-time');
 
-  runTransactionMock.mockImplementation(async (_db: unknown, callback: (tx: {
-    get: typeof transactionGetMock;
-    set: typeof transactionSetMock;
-    update: typeof transactionUpdateMock;
-  }) => Promise<void>) => {
-    await callback({
-      get: transactionGetMock,
-      set: transactionSetMock,
-      update: transactionUpdateMock,
-    });
-  });
+  runTransactionMock.mockImplementation(
+    async (
+      _db: unknown,
+      callback: (tx: {
+        get: typeof transactionGetMock;
+        set: typeof transactionSetMock;
+        update: typeof transactionUpdateMock;
+      }) => Promise<void>
+    ) => {
+      await callback({
+        get: transactionGetMock,
+        set: transactionSetMock,
+        update: transactionUpdateMock,
+      });
+    }
+  );
 
   vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'item-1') });
 });
@@ -79,33 +84,37 @@ describe('itemService', () => {
   it('addItem rejects invalid text', async () => {
     const { addItem } = await loadItemService();
 
-    await expect(addItem('list-1', '', 'user-1')).rejects.toThrow(
-      'Item text cannot be empty'
-    );
+    await expect(addItem('list-1', '', 'user-1')).rejects.toThrow('Item text cannot be empty');
   });
 
   it('addItem rejects when list limit reached', async () => {
-    const { addItem, LIST_FULL_ERROR } = await loadItemService();
+    const { addItem } = await loadItemService();
     transactionGetMock.mockResolvedValueOnce({
       exists: () => true,
       data: () => ({ itemCount: LIMITS.ITEMS_PER_LIST_MAX }),
     });
 
     await expect(addItem('list-1', 'Milk', 'user-1')).rejects.toThrow(
-      `${LIST_FULL_ERROR}: List has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
+      `Cannot add item: list has reached the maximum of ${LIMITS.ITEMS_PER_LIST_MAX} items`
     );
   });
 
-  it('addItem rejects when itemCount is missing', async () => {
-    const { addItem, LIST_COUNT_MISSING_ERROR } = await loadItemService();
+  it('addItem computes count from query when itemCount missing', async () => {
+    const { addItem } = await loadItemService();
     transactionGetMock.mockResolvedValueOnce({
       exists: () => true,
-      data: () => ({}),
+      data: () => ({}), // No itemCount - triggers fallback count query
     });
+    // Mock getItemCount to return 0 (fallback count query)
+    getDocsMock.mockResolvedValueOnce({ size: 0 });
 
-    await expect(addItem('list-1', 'Milk', 'user-1')).rejects.toThrow(
-      `${LIST_COUNT_MISSING_ERROR}: List is missing itemCount (list-1)`
-    );
+    const item = await addItem('list-1', 'Milk', 'user-1');
+
+    expect(item.id).toBe('item-1');
+    expect(getDocsMock).toHaveBeenCalledTimes(1); // Fallback count query was called
+    expect(transactionUpdateMock).toHaveBeenCalledWith(expect.anything(), {
+      itemCount: 1, // Should increment from computed 0 to 1
+    });
   });
 
   it('addItem writes item and returns item with id', async () => {
@@ -140,9 +149,7 @@ describe('itemService', () => {
     const { toggleItemChecked } = await loadItemService();
     transactionGetMock.mockResolvedValueOnce({ exists: () => false });
 
-    await expect(toggleItemChecked('list-1', 'item-1')).rejects.toThrow(
-      'Item not found: item-1'
-    );
+    await expect(toggleItemChecked('list-1', 'item-1')).rejects.toThrow('Item not found: item-1');
   });
 
   it('toggleItemChecked flips checked state', async () => {
@@ -209,7 +216,7 @@ describe('itemService', () => {
   it('bulkSoftDelete skips empty input', async () => {
     const { bulkSoftDelete } = await loadItemService();
 
-    await bulkSoftDelete('list-1', []); 
+    await bulkSoftDelete('list-1', []);
 
     expect(runTransactionMock).not.toHaveBeenCalled();
   });

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
@@ -76,6 +77,7 @@ describe('useItems', () => {
             }),
           },
         ],
+        metadata: { hasPendingWrites: false },
       });
       return vi.fn();
     });
