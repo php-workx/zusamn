@@ -40,7 +40,13 @@ import { MAX_TEXT_LENGTH, MAX_ITEMS_PER_LIST } from '@zusamn/domain';
 import type { Item } from '@zusamn/domain';
 import { useAuthContext, useToast } from '../../src/providers';
 import { useNetworkStatus, useLastUsedList } from '../../src/hooks';
-import { FixedBottomInput, ShareSheet, ListSwitcherSheet } from '../../src/components';
+import {
+  FixedBottomInput,
+  ShareSheet,
+  ListSwitcherSheet,
+  RenameAliasSheet,
+} from '../../src/components';
+import type { List } from '@zusamn/domain';
 
 /**
  * List Detail screen - main screen for viewing and managing a shopping list.
@@ -77,6 +83,10 @@ export default function ListDetailScreen() {
 
   // List switcher state
   const [showListSwitcher, setShowListSwitcher] = useState(false);
+
+  // Rename alias state
+  const [showRenameSheet, setShowRenameSheet] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{ listId: string; alias: string } | null>(null);
 
   // Swipeable refs for closing
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -473,6 +483,19 @@ export default function ListDetailScreen() {
     [setLastUsedListId]
   );
 
+  // Handle rename request from list switcher
+  const handleRenameAlias = useCallback((targetList: List, currentAlias: string) => {
+    setRenameTarget({ listId: targetList.id, alias: currentAlias });
+    setShowRenameSheet(true);
+  }, []);
+
+  // Handle successful rename - close both sheets
+  const handleRenameSuccess = useCallback(() => {
+    setShowRenameSheet(false);
+    setShowListSwitcher(false);
+    setRenameTarget(null);
+  }, []);
+
   // Separate items into unchecked and checked
   // Items pending sink stay with unchecked items visually
   const uncheckedItems = items.filter((item) => !item.checked);
@@ -671,6 +694,21 @@ export default function ListDetailScreen() {
             userId={user.uid}
             currentListId={listId}
             onSelectList={handleSelectList}
+            onRenameAlias={handleRenameAlias}
+          />
+        )}
+
+        {user?.uid && renameTarget && (
+          <RenameAliasSheet
+            visible={showRenameSheet}
+            onClose={() => {
+              setShowRenameSheet(false);
+              setRenameTarget(null);
+            }}
+            listId={renameTarget.listId}
+            userId={user.uid}
+            currentAlias={renameTarget.alias}
+            onRenameSuccess={handleRenameSuccess}
           />
         )}
       </Screen>
