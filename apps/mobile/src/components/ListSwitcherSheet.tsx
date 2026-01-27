@@ -4,6 +4,9 @@ import { SheetModal, Text, XStack, YStack, Separator } from '@zusamn/ui';
 import { useUserLists, type UserListItem } from '@zusamn/firebase';
 import type { List } from '@zusamn/domain';
 
+/** Number of list items visible before scroll is enabled */
+const MAX_VISIBLE_LIST_ITEMS = 6;
+
 export interface ListSwitcherSheetProps {
   /** Whether the sheet is visible */
   visible: boolean;
@@ -131,7 +134,7 @@ export function ListSwitcherSheet({
           data={lists}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
-          scrollEnabled={lists.length > 6}
+          scrollEnabled={lists.length > MAX_VISIBLE_LIST_ITEMS}
           style={{ maxHeight: 400 }}
         />
       )}
