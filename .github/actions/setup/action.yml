@@ -1,5 +1,5 @@
 name: Setup
-description: Setup pnpm, Node.js, and install dependencies (checkout must happen first)
+description: Setup pnpm, Node.js, install dependencies, and configure Turbo cache (checkout must happen first)
 
 runs:
   using: composite
@@ -14,3 +14,6 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
+
+    - name: Setup Turbo cache
+      uses: dtinth/setup-github-actions-caching-for-turbo@v1
