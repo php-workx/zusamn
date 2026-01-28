@@ -59,8 +59,18 @@ echo ""
 
 # 2. Auto-format staged files (lint-staged runs biome format --write)
 echo "→ [2/7] Formatting staged files..."
-if ! pnpm lint-staged 2>/dev/null; then
-  echo "  ⚠️  lint-staged not available, skipping auto-format"
+if ! command -v pnpm &> /dev/null; then
+  echo "  ⚠️  pnpm not available, skipping auto-format"
+elif ! pnpm lint-staged; then
+  echo "  ⚠️  lint-staged failed, running biome check --write as fallback..."
+  if ! pnpm biome check --write . 2>&1 | tail -5; then
+    echo ""
+    echo "❌ Formatting failed"
+    exit 1
+  fi
+  # Re-stage any auto-fixed files
+  git add -u
+  echo "  ✓ Formatted (via fallback)"
 else
   echo "  ✓ Formatted"
 fi
