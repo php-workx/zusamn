@@ -8,6 +8,7 @@ import {
   writeBatch,
   limit,
   Timestamp,
+  arrayRemove,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
 import { generateUUID } from '../utils';
@@ -213,4 +214,43 @@ export async function hasPersonalList(userId: string): Promise<boolean> {
   const listsSnapshot = await getDocs(listsQuery);
 
   return !listsSnapshot.empty;
+}
+
+/**
+ * Leaves a shared list by removing the user's membership.
+ * Cannot be used on personal lists (where ownerUserId === userId).
+ *
+ * @param listId - The list ID to leave
+ * @param userId - The user ID leaving the list
+ * @throws Error if trying to leave personal list
+ */
+export async function leaveList(listId: string, userId: string): Promise<void> {
+  const db = getDb();
+
+  // First check if this is a personal list
+  const listRef = doc(db, 'lists', listId);
+  const listSnapshot = await getDoc(listRef);
+
+  if (!listSnapshot.exists()) {
+    throw new Error('List not found');
+  }
+
+  const listData = listSnapshot.data();
+  if (listData.ownerUserId === userId) {
+    throw new Error('Cannot leave your personal list');
+  }
+
+  // Remove membership and update memberIds array atomically
+  const batch = writeBatch(db);
+
+  // Delete membership document
+  const membershipRef = doc(db, 'lists', listId, 'memberships', userId);
+  batch.delete(membershipRef);
+
+  // Remove from memberIds array
+  batch.update(listRef, {
+    memberIds: arrayRemove(userId),
+  });
+
+  await batch.commit();
 }

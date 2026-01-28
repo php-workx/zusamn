@@ -11,6 +11,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "echo 'Mobile build handled by EAS' && exit 0"
   },

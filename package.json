@@ -13,7 +13,7 @@
     "test": "turbo test",
     "test:unit": "vitest run",
     "test:emulator": "vitest run --config vitest.emulator.config.ts",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage && pnpm --filter @zusamn/mobile test:coverage",
     "test:watch": "vitest",
     "build": "turbo build",
     "build:web": "turbo build --filter=@zusamn/web",

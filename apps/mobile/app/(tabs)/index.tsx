@@ -35,12 +35,19 @@ import {
   createPersonalList,
   useUser,
   getUserDisplayNames,
+  leaveList,
 } from '@zusamn/firebase';
 import { MAX_TEXT_LENGTH, MAX_ITEMS_PER_LIST } from '@zusamn/domain';
 import type { Item } from '@zusamn/domain';
 import { useAuthContext, useToast } from '../../src/providers';
 import { useNetworkStatus, useLastUsedList } from '../../src/hooks';
-import { FixedBottomInput, ShareSheet } from '../../src/components';
+import {
+  FixedBottomInput,
+  ShareSheet,
+  ListSwitcherSheet,
+  RenameAliasSheet,
+} from '../../src/components';
+import type { List } from '@zusamn/domain';
 
 /**
  * List Detail screen - main screen for viewing and managing a shopping list.
@@ -74,6 +81,17 @@ export default function ListDetailScreen() {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [memberNames, setMemberNames] = useState<string[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+
+  // List switcher state
+  const [showListSwitcher, setShowListSwitcher] = useState(false);
+
+  // Rename alias state
+  const [showRenameSheet, setShowRenameSheet] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{ listId: string; alias: string } | null>(null);
+
+  // Leave list state
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   // Swipeable refs for closing
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -461,6 +479,51 @@ export default function ListDetailScreen() {
     });
   }, [showUndoToast]);
 
+  // Handle list selection from switcher
+  const handleSelectList = useCallback(
+    (selectedList: { id: string }) => {
+      setListId(selectedList.id);
+      setLastUsedListId(selectedList.id);
+    },
+    [setLastUsedListId]
+  );
+
+  // Handle rename request from list switcher
+  const handleRenameAlias = useCallback((targetList: List, currentAlias: string) => {
+    setRenameTarget({ listId: targetList.id, alias: currentAlias });
+    setShowRenameSheet(true);
+  }, []);
+
+  // Handle successful rename - close both sheets
+  const handleRenameSuccess = useCallback(() => {
+    setShowRenameSheet(false);
+    setShowListSwitcher(false);
+    setRenameTarget(null);
+  }, []);
+
+  // Handle leave list confirmation
+  const handleLeaveList = useCallback(async () => {
+    if (!listId || !user?.uid) return;
+
+    setIsLeaving(true);
+    setShowLeaveDialog(false);
+
+    try {
+      await leaveList(listId, user.uid);
+      // Clear cached list and navigate to personal list
+      clearLastUsedListId();
+      await ensurePersonalList();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to leave list';
+      Alert.alert('Unable to leave list', message);
+    } finally {
+      setIsLeaving(false);
+    }
+  }, [listId, user?.uid, clearLastUsedListId, ensurePersonalList]);
+
+  // Determine if this is a shared list (not the user's personal list)
+  const isSharedList = list && user?.uid && list.ownerUserId !== user.uid;
+
   // Separate items into unchecked and checked
   // Items pending sink stay with unchecked items visually
   const uncheckedItems = items.filter((item) => !item.checked);
@@ -508,6 +571,16 @@ export default function ListDetailScreen() {
       onPress: () => setShowClearDialog(true),
       destructive: true,
     },
+    // Only show "Leave List" for shared lists (not personal list)
+    ...(isSharedList
+      ? [
+          {
+            label: 'Leave List',
+            onPress: () => setShowLeaveDialog(true),
+            destructive: true,
+          },
+        ]
+      : []),
   ];
 
   // Render delete action for swipe
@@ -597,6 +670,7 @@ export default function ListDetailScreen() {
         <TopBar
           title={listTitle}
           subtitle={getStatusSubtitle()}
+          onTitlePress={() => setShowListSwitcher(true)}
           leftActions={
             <GhostButton onPress={handleOpenShareSheet} accessibilityLabel="Share list">
               Share
@@ -640,6 +714,16 @@ export default function ListDetailScreen() {
           destructive
         />
 
+        <ConfirmDialog
+          visible={showLeaveDialog}
+          onCancel={() => setShowLeaveDialog(false)}
+          title="Leave this list?"
+          description="You'll lose access to this list."
+          confirmLabel="Leave"
+          onConfirm={handleLeaveList}
+          destructive
+        />
+
         {list && firestoreUser && (
           <ShareSheet
             visible={showShareSheet}
@@ -648,6 +732,31 @@ export default function ListDetailScreen() {
             currentUser={firestoreUser}
             memberNames={isLoadingMembers ? [] : memberNames}
             onShareSuccess={handleShareSuccess}
+          />
+        )}
+
+        {user?.uid && (
+          <ListSwitcherSheet
+            visible={showListSwitcher}
+            onClose={() => setShowListSwitcher(false)}
+            userId={user.uid}
+            currentListId={listId}
+            onSelectList={handleSelectList}
+            onRenameAlias={handleRenameAlias}
+          />
+        )}
+
+        {user?.uid && renameTarget && (
+          <RenameAliasSheet
+            visible={showRenameSheet}
+            onClose={() => {
+              setShowRenameSheet(false);
+              setRenameTarget(null);
+            }}
+            listId={renameTarget.listId}
+            userId={user.uid}
+            currentAlias={renameTarget.alias}
+            onRenameSuccess={handleRenameSuccess}
           />
         )}
       </Screen>
