@@ -59,30 +59,24 @@ echo ""
 
 # 2. Auto-format staged files (lint-staged runs biome format --write)
 echo "→ [2/7] Formatting staged files..."
-if ! command -v pnpm &> /dev/null; then
-  echo "  ⚠️  pnpm not available, skipping auto-format"
-elif ! pnpm lint-staged; then
-  echo "  ⚠️  lint-staged failed, running biome check --write as fallback..."
-  # Capture originally staged files before running formatter
+if pnpm lint-staged 2>/dev/null; then
+  echo "  ✓ Formatted"
+else
+  echo "  ⚠️  lint-staged failed, trying biome on staged files..."
   STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
-  if [ -z "$STAGED_FILES" ]; then
-    echo "  ✓ No staged files to format"
+  if [ -n "$STAGED_FILES" ] && pnpm biome check --write $STAGED_FILES 2>/dev/null; then
+    git add -u
+    echo "  ✓ Formatted (staged files)"
   else
-    # Run biome on staged files only, capture exit code properly
-    BIOME_OUTPUT=$(pnpm biome check --write $STAGED_FILES 2>&1)
-    BIOME_EXIT=${PIPESTATUS[0]}
-    echo "$BIOME_OUTPUT" | tail -5
-    if [ $BIOME_EXIT -ne 0 ]; then
+    echo "  ⚠️  Staged files format failed, formatting entire repo..."
+    if ! pnpm format 2>&1 | tail -5; then
       echo ""
       echo "❌ Formatting failed"
       exit 1
     fi
-    # Re-stage only the originally staged files
-    echo "$STAGED_FILES" | xargs git add --
-    echo "  ✓ Formatted (via fallback)"
+    git add -u
+    echo "  ✓ Formatted (full repo)"
   fi
-else
-  echo "  ✓ Formatted"
 fi
 echo ""
 

@@ -41,12 +41,14 @@ jest.mock('@zusamn/ui', () => {
       placeholder,
       error,
       onSubmitEditing,
+      maxLength,
     }: {
       value: string;
       onChangeText: (text: string) => void;
       placeholder?: string;
       error?: string;
       onSubmitEditing?: () => void;
+      maxLength?: number;
     }) => (
       <View>
         <TextInput
@@ -55,6 +57,7 @@ jest.mock('@zusamn/ui', () => {
           onChangeText={onChangeText}
           placeholder={placeholder}
           onSubmitEditing={onSubmitEditing}
+          maxLength={maxLength}
         />
         {error && <Text testID="error-text">{error}</Text>}
       </View>
@@ -94,8 +97,6 @@ jest.mock('@zusamn/ui', () => {
   };
 });
 
-jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-
 describe('RenameAliasSheet', () => {
   const defaultProps = {
     visible: true,
@@ -108,12 +109,20 @@ describe('RenameAliasSheet', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
 
   it('renders with current alias prefilled', () => {
     const { getByTestId } = render(<RenameAliasSheet {...defaultProps} />);
 
     expect(getByTestId('alias-input').props.value).toBe('My List');
+  });
+
+  it('enforces MAX_ALIAS_LENGTH on the input field', () => {
+    const { getByTestId } = render(<RenameAliasSheet {...defaultProps} />);
+
+    // Verify the TextField has maxLength prop set to the mocked MAX_ALIAS_LENGTH (50)
+    expect(getByTestId('alias-input').props.maxLength).toBe(50);
   });
 
   it('does not render when not visible', () => {
