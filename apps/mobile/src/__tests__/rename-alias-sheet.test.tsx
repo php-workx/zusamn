@@ -107,8 +107,7 @@ describe('RenameAliasSheet', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockUpdateAlias.mockReset();
+    jest.resetAllMocks();
   });
 
   it('renders with current alias prefilled', () => {

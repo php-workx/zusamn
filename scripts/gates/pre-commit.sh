@@ -63,14 +63,24 @@ if ! command -v pnpm &> /dev/null; then
   echo "  ⚠️  pnpm not available, skipping auto-format"
 elif ! pnpm lint-staged; then
   echo "  ⚠️  lint-staged failed, running biome check --write as fallback..."
-  if ! pnpm biome check --write . 2>&1 | tail -5; then
-    echo ""
-    echo "❌ Formatting failed"
-    exit 1
+  # Capture originally staged files before running formatter
+  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+  if [ -z "$STAGED_FILES" ]; then
+    echo "  ✓ No staged files to format"
+  else
+    # Run biome on staged files only, capture exit code properly
+    BIOME_OUTPUT=$(pnpm biome check --write $STAGED_FILES 2>&1)
+    BIOME_EXIT=${PIPESTATUS[0]}
+    echo "$BIOME_OUTPUT" | tail -5
+    if [ $BIOME_EXIT -ne 0 ]; then
+      echo ""
+      echo "❌ Formatting failed"
+      exit 1
+    fi
+    # Re-stage only the originally staged files
+    echo "$STAGED_FILES" | xargs git add --
+    echo "  ✓ Formatted (via fallback)"
   fi
-  # Re-stage any auto-fixed files
-  git add -u
-  echo "  ✓ Formatted (via fallback)"
 else
   echo "  ✓ Formatted"
 fi
