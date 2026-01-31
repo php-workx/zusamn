@@ -1,0 +1,37 @@
+# Gitleaks configuration for Zusamn
+# See: https://github.com/gitleaks/gitleaks
+
+title = "Zusamn Secret Scanning"
+
+# Paths to ignore
+[allowlist]
+paths = [
+  '''node_modules''',
+  '''coverage''',
+  '''dist''',
+  '''build''',
+  '''.expo''',
+  '''\.lock$''',
+  '''pnpm-lock\.yaml''',
+  '''package-lock\.json''',
+]
+
+# Regex patterns to ignore (anchored to avoid masking real secrets)
+regexes = [
+  # Only match explicit placeholder patterns, not substrings
+  '''^example[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''^test[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''^dummy[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''^placeholder[-_]?(key|token|secret|password|api[-_]?key)?$''',
+  '''YOUR_[A-Z_]+_HERE''',
+  # Firebase emulator/test values
+  '''demo-project''',
+  '''test-project''',
+]
+
+# Additional rules can be added here
+# [[rules]]
+# id = "custom-api-key"
+# description = "Custom API key pattern"
+# regex = '''custom_key_[a-zA-Z0-9]{32}'''
+# secretGroup = 0

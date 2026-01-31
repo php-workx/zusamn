@@ -11,11 +11,6 @@ export interface SeparatorProps {
  */
 export function Separator({ inset = 0 }: SeparatorProps) {
   return (
-    <YStack
-      height={0.5}
-      backgroundColor="$separator"
-      marginHorizontal={inset}
-      accessible={false}
-    />
+    <YStack height={0.5} backgroundColor="$separator" marginHorizontal={inset} accessible={false} />
   );
 }

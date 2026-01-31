@@ -20,13 +20,7 @@ export interface ToastProps {
  * Placement: above keyboard and TabBar.
  * Accessibility: announced as polite live region.
  */
-export function Toast({
-  message,
-  visible,
-  onDismiss,
-  onUndo,
-  duration = 5000,
-}: ToastProps) {
+export function Toast({ message, visible, onDismiss, onUndo, duration = 5000 }: ToastProps) {
   useEffect(() => {
     if (visible) {
       const timer = setTimeout(() => {

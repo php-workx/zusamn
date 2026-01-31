@@ -1,20 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { onSnapshotsInSync, type Firestore } from 'firebase/firestore';
-import { initFirebase } from '../client';
+import { onSnapshotsInSync } from 'firebase/firestore';
+import { getFirestoreDb } from '../db';
 
 export interface SyncStatus {
   /** Whether there are local writes pending upload to Firestore */
   hasPendingWrites: boolean;
   /** Manually mark that a write operation has started */
   markWritePending: () => void;
-}
-
-/**
- * Get the Firestore instance
- */
-function getFirestoreDb(): Firestore {
-  const { db } = initFirebase();
-  return db;
+  /** Manually clear pending write state (e.g., on error) */
+  clearWritePending: () => void;
 }
 
 /**
@@ -80,8 +74,17 @@ export function useSyncStatus(): SyncStatus {
       // After 30 seconds, assume sync is complete or offline
       // The offline indicator should take precedence in that case
       syncTimeoutRef.current = null;
+      setHasPendingWrites(false);
     }, 30000);
   }, []);
 
-  return { hasPendingWrites, markWritePending };
+  const clearWritePending = useCallback(() => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
+    }
+    setHasPendingWrites(false);
+  }, []);
+
+  return { hasPendingWrites, markWritePending, clearWritePending };
 }

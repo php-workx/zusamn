@@ -1,0 +1,19 @@
+name: Setup
+description: Setup pnpm, Node.js, install dependencies, and configure Turbo cache (checkout must happen first)
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 22
+        cache: pnpm
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Setup Turbo cache
+      uses: dtinth/setup-github-actions-caching-for-turbo@v1

@@ -8,8 +8,10 @@ import {
   writeBatch,
   limit,
   Timestamp,
+  arrayRemove,
 } from 'firebase/firestore';
 import { initFirebase } from '../client';
+import { generateUUID } from '../utils';
 import type { List, Membership, Locale } from '@zusamn/domain';
 
 /**
@@ -17,17 +19,6 @@ import type { List, Membership, Locale } from '@zusamn/domain';
  */
 function getDefaultAlias(locale: Locale): string {
   return locale === 'de' ? 'Einkaufen' : 'Shopping';
-}
-
-/**
- * Generates a UUIDv4.
- */
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
 }
 
 /**
@@ -100,29 +91,33 @@ export async function getUserLists(
   const db = getDb();
 
   // Query all lists where user is a member
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('memberIds', 'array-contains', userId)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('memberIds', 'array-contains', userId));
   const listsSnapshot = await getDocs(listsQuery);
+
+  // Fetch all memberships in parallel for better performance
+  const membershipPromises = listsSnapshot.docs.map((listDoc) => {
+    const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
+    return getDoc(membershipRef);
+  });
+  const membershipSnapshots = await Promise.all(membershipPromises);
 
   const results: Array<{ list: List; membership: Membership }> = [];
 
-  // For each list, get the user's membership
-  for (const listDoc of listsSnapshot.docs) {
+  // Combine list data with membership data
+  for (let i = 0; i < listsSnapshot.docs.length; i++) {
+    const listDoc = listsSnapshot.docs[i];
+    const membershipSnapshot = membershipSnapshots[i];
+
+    if (!listDoc || !membershipSnapshot) continue;
+
     const listData = listDoc.data();
     const list: List = {
       id: listDoc.id,
       ownerUserId: listData.ownerUserId,
       memberIds: listData.memberIds,
       createdAt: listData.createdAt,
-      itemCount:
-        typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
+      itemCount: typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
     };
-
-    // Get user's membership document
-    const membershipRef = doc(db, 'lists', listDoc.id, 'memberships', userId);
-    const membershipSnapshot = await getDoc(membershipRef);
 
     if (membershipSnapshot.exists()) {
       const membershipData = membershipSnapshot.data();
@@ -164,11 +159,8 @@ export async function getPersonalList(
 ): Promise<{ list: List; membership: Membership } | null> {
   const db = getDb();
 
-  // Query for list where user is the owner
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('ownerUserId', '==', userId)
-  );
+  // Query for list where user is the owner (limit 1 since each user has at most one personal list)
+  const listsQuery = query(collection(db, 'lists'), where('ownerUserId', '==', userId), limit(1));
   const listsSnapshot = await getDocs(listsQuery);
 
   if (listsSnapshot.empty) {
@@ -186,8 +178,7 @@ export async function getPersonalList(
     ownerUserId: listData.ownerUserId,
     memberIds: listData.memberIds,
     createdAt: listData.createdAt,
-    itemCount:
-      typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
+    itemCount: typeof listData.itemCount === 'number' ? listData.itemCount : undefined,
   };
 
   // Get the user's membership
@@ -196,9 +187,7 @@ export async function getPersonalList(
 
   if (!membershipSnapshot.exists()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        `Missing membership for owner ${userId} on personal list ${listDoc.id}.`
-      );
+      console.warn(`Missing membership for owner ${userId} on personal list ${listDoc.id}.`);
     }
     return null;
   }
@@ -221,12 +210,47 @@ export async function getPersonalList(
 export async function hasPersonalList(userId: string): Promise<boolean> {
   const db = getDb();
 
-  const listsQuery = query(
-    collection(db, 'lists'),
-    where('ownerUserId', '==', userId),
-    limit(1)
-  );
+  const listsQuery = query(collection(db, 'lists'), where('ownerUserId', '==', userId), limit(1));
   const listsSnapshot = await getDocs(listsQuery);
 
   return !listsSnapshot.empty;
+}
+
+/**
+ * Leaves a shared list by removing the user's membership.
+ * Cannot be used on personal lists (where ownerUserId === userId).
+ *
+ * @param listId - The list ID to leave
+ * @param userId - The user ID leaving the list
+ * @throws Error if trying to leave personal list
+ */
+export async function leaveList(listId: string, userId: string): Promise<void> {
+  const db = getDb();
+
+  // First check if this is a personal list
+  const listRef = doc(db, 'lists', listId);
+  const listSnapshot = await getDoc(listRef);
+
+  if (!listSnapshot.exists()) {
+    throw new Error('List not found');
+  }
+
+  const listData = listSnapshot.data();
+  if (listData.ownerUserId === userId) {
+    throw new Error('Cannot leave your personal list');
+  }
+
+  // Remove membership and update memberIds array atomically
+  const batch = writeBatch(db);
+
+  // Delete membership document
+  const membershipRef = doc(db, 'lists', listId, 'memberships', userId);
+  batch.delete(membershipRef);
+
+  // Remove from memberIds array
+  batch.update(listRef, {
+    memberIds: arrayRemove(userId),
+  });
+
+  await batch.commit();
 }

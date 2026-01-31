@@ -21,12 +21,7 @@ export interface TabBarProps {
  * Individual tab item for TabBar.
  * Minimum touch target of 44px.
  */
-export function TabBarItem({
-  label,
-  active = false,
-  icon,
-  onPress,
-}: TabBarItemProps) {
+export function TabBarItem({ label, active = false, icon, onPress }: TabBarItemProps) {
   return (
     <YStack
       flex={1}
@@ -40,11 +35,7 @@ export function TabBarItem({
       accessibilityState={{ selected: active }}
       accessibilityLabel={label}
     >
-      {icon && (
-        <YStack marginBottom="$1">
-          {icon}
-        </YStack>
-      )}
+      {icon && <YStack marginBottom="$1">{icon}</YStack>}
       <Text
         fontSize="$1" // 13px
         fontWeight={active ? '$2' : '$1'} // semibold when active

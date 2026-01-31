@@ -7,20 +7,26 @@ export interface ListRowProps {
   checked: boolean;
   /** Called when the row is pressed to toggle checked state */
   onPress: () => void;
-  /** Whether this item was changed by remote user (for highlight effect) */
-  isRemoteChange?: boolean;
+  /** Called when the row is long-pressed (e.g., for contextual actions) */
+  onLongPress?: () => void;
+  /** Whether this item should be highlighted (remote change indicator) */
+  highlighted?: boolean;
 }
 
 /**
  * List item row with checkbox, text, and checked styling.
  * Core item row component for shopping list items.
  * Minimum touch target: 44px (actual height: 48px).
+ *
+ * When `highlighted` is true, shows a subtle background highlight
+ * to indicate the item was recently changed by another user.
  */
 export function ListRow({
   text,
   checked,
   onPress,
-  isRemoteChange = false,
+  onLongPress,
+  highlighted = false,
 }: ListRowProps) {
   return (
     <XStack
@@ -29,8 +35,9 @@ export function ListRow({
       paddingVertical="$3" // 12px
       alignItems="center"
       gap="$3" // 12px gap between checkbox and text
-      backgroundColor={isRemoteChange ? '$surface' : 'transparent'}
+      backgroundColor={highlighted ? '$surface' : 'transparent'}
       onPress={onPress}
+      onLongPress={onLongPress}
       pressStyle={{ opacity: 0.7 }}
       accessible
       accessibilityRole="checkbox"
@@ -49,11 +56,7 @@ export function ListRow({
         justifyContent="center"
       >
         {checked && (
-          <Text
-            fontSize={14}
-            color="$accentColor"
-            fontWeight="$2"
-          >
+          <Text fontSize={14} color="$accentColor" fontWeight="$2">
             ✓
           </Text>
         )}

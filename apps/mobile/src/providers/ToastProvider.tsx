@@ -4,24 +4,26 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useEffect,
   type ReactNode,
 } from 'react';
+import * as Crypto from 'expo-crypto';
 import { Toast } from '@zusamn/ui';
+
+type ToastCallback = () => void | Promise<void>;
 
 interface ToastState {
   id: string;
   message: string;
-  onUndo: () => void;
-  /** Called when toast is dismissed without undo (timeout or replaced) */
-  onFinalize?: () => void;
+  onUndo: ToastCallback;
 }
 
 export interface ToastContextValue {
   /** Show undo toast. Returns toast ID. */
   showUndoToast: (options: {
     message: string;
-    onUndo: () => void;
-    onFinalize?: () => void;
+    onUndo: ToastCallback;
+    onFinalize?: ToastCallback;
   }) => string;
   /** Dismiss current toast (triggers finalize) */
   dismissToast: () => void;
@@ -43,7 +45,7 @@ interface ToastProviderProps {
  * - If a new toast is shown while another is active, the previous toast is
  *   dismissed and its onFinalize callback is called (action cannot be undone)
  * - Toast auto-dismisses after 5 seconds
- * - onFinalize runs synchronously; async work should handle its own errors
+ * - Undo/finalize callbacks may be async; errors are caught and logged
  *
  * Usage:
  * ```tsx
@@ -75,83 +77,94 @@ interface ToastProviderProps {
  */
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toast, setToast] = useState<ToastState | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track current toast in ref for immediate access (avoids stale closure in rapid succession)
+  const toastRef = useRef<ToastState | null>(null);
   // Store onFinalize in a ref to avoid stale closure issues
-  const onFinalizeRef = useRef<(() => void) | undefined>(undefined);
+  const onFinalizeRef = useRef<ToastCallback | undefined>(undefined);
 
-  const clearTimeout_ = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+  // Cleanup refs on unmount to prevent stale callbacks
+  useEffect(() => {
+    return () => {
+      onFinalizeRef.current = undefined;
+      toastRef.current = null;
+    };
+  }, []);
+
+  const runToastCallback = useCallback((callback: ToastCallback | undefined, label: string) => {
+    if (!callback) return;
+    try {
+      Promise.resolve(callback()).catch((error) => {
+        console.error(`Toast ${label} callback failed`, error);
+      });
+    } catch (error) {
+      console.error(`Toast ${label} callback failed`, error);
     }
   }, []);
 
   const finalizeAndClear = useCallback(() => {
-    clearTimeout_();
     // Call onFinalize if defined
-    onFinalizeRef.current?.();
+    runToastCallback(onFinalizeRef.current, 'finalize');
     onFinalizeRef.current = undefined;
+    toastRef.current = null;
     setToast(null);
-  }, [clearTimeout_]);
+  }, [runToastCallback]);
 
   const showUndoToast = useCallback(
     (options: {
       message: string;
-      onUndo: () => void;
-      onFinalize?: () => void;
+      onUndo: ToastCallback;
+      onFinalize?: ToastCallback;
     }): string => {
       // If existing toast, finalize it first (previous action can no longer be undone)
-      if (toast) {
-        clearTimeout_();
-        onFinalizeRef.current?.();
+      // Use ref for immediate access - avoids stale closure when called in rapid succession
+      if (toastRef.current) {
+        runToastCallback(onFinalizeRef.current, 'finalize');
       }
 
-      // Generate new ID
-      const id = crypto.randomUUID();
+      // Generate new ID using expo-crypto (crypto.randomUUID not available in RN)
+      const id = Crypto.randomUUID();
 
       // Store new onFinalize in ref
       onFinalizeRef.current = options.onFinalize;
 
-      // Set new toast state
-      setToast({
+      // Create new toast state
+      const newToast: ToastState = {
         id,
         message: options.message,
         onUndo: options.onUndo,
-        onFinalize: options.onFinalize,
-      });
+      };
 
-      // Start timeout - when it fires, finalize and clear
-      timeoutRef.current = setTimeout(() => {
-        onFinalizeRef.current?.();
-        onFinalizeRef.current = undefined;
-        setToast(null);
-      }, TOAST_DURATION);
+      // Update both ref (immediate) and state (triggers render)
+      toastRef.current = newToast;
+      setToast(newToast);
+
+      // Timer is managed by Toast component via duration prop
+      // When Toast auto-dismisses, it calls onDismiss which triggers finalizeAndClear
 
       return id;
     },
-    [toast, clearTimeout_]
+    [runToastCallback] // Uses refs for immediate access
   );
 
   const dismissToast = useCallback(() => {
-    if (toast) {
+    if (toastRef.current) {
       finalizeAndClear();
     }
-  }, [toast, finalizeAndClear]);
+  }, [finalizeAndClear]);
 
   const handleUndo = useCallback(() => {
-    if (toast) {
-      clearTimeout_();
+    if (toastRef.current) {
       // Call onUndo, not onFinalize
-      toast.onUndo();
+      runToastCallback(toastRef.current.onUndo, 'undo');
       // Clear the onFinalize ref since we're undoing
       onFinalizeRef.current = undefined;
+      toastRef.current = null;
       setToast(null);
     }
-  }, [toast, clearTimeout_]);
+  }, [runToastCallback]);
 
   const handleDismiss = useCallback(() => {
-    // This is called by Toast when it auto-dismisses or is dismissed
-    // We handle timer ourselves, so just finalize
+    // Called by Toast when it auto-dismisses after duration
     finalizeAndClear();
   }, [finalizeAndClear]);
 
@@ -168,8 +181,6 @@ export function ToastProvider({ children }: ToastProviderProps) {
         visible={!!toast}
         onDismiss={handleDismiss}
         onUndo={handleUndo}
-        // Pass duration to keep Toast's internal timer in sync,
-        // though we manage our own timer for finalization
         duration={TOAST_DURATION}
       />
     </ToastContext.Provider>

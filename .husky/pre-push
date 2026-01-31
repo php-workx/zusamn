@@ -1,0 +1,4 @@
+#!/bin/sh
+# Pre-push hook - runs thorough quality gates before pushing
+
+./scripts/gates/pre-push.sh

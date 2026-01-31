@@ -1,52 +1,91 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
-  lint:
+  setup:
+    name: Setup & Cache
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
+      - name: Warm turbo cache
+        run: pnpm turbo build typecheck lint --concurrency=4
+
+  secrets:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+          fetch-depth: 0
+      - name: TruffleHog scan
+        uses: trufflesecurity/trufflehog@v3.88.26
+        with:
+          extra_args: --only-verified
+
+  security-audit:
+    name: Security Audit
+    needs: [setup]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - run: pnpm audit --audit-level=high
+
+  lint:
+    name: Lint
+    needs: [setup]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
       - run: pnpm lint
 
-  typecheck:
+  format:
+    name: Format Check
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
+      - run: pnpm format:check
+
+  typecheck:
+    name: Type Check
+    needs: [setup]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
       - run: pnpm typecheck
 
   test:
+    name: Unit Tests
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
+      - uses: actions/setup-java@v4
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+          distribution: temurin
+          java-version: '21'
       - name: Run tests with coverage
-        run: pnpm test
+        run: pnpm test:coverage
+      - name: Check coverage thresholds
+        run: pnpm gate:coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/domain/coverage/lcov.info,packages/ui/coverage/lcov.info
+          files: coverage/lcov.info,apps/mobile/coverage/lcov.info
           fail_ci_if_error: false
           verbose: true
       - name: Upload test results to Codecov
@@ -56,25 +95,19 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
+    name: Build
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - run: pnpm build
 
   functions:
+    name: Firebase Functions
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
+      - uses: ./.github/actions/setup
       - run: pnpm --filter @zusamn/functions typecheck

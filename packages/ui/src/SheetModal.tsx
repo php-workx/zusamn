@@ -17,12 +17,7 @@ export interface SheetModalProps {
  * Used for: List switcher, Share flow, Rename alias, Share-disabled explanation.
  * Sheet radius: 16px, padding: 16px.
  */
-export function SheetModal({
-  visible,
-  onClose,
-  title,
-  children,
-}: SheetModalProps) {
+export function SheetModal({ visible, onClose, title, children }: SheetModalProps) {
   if (!visible) return null;
 
   return (
@@ -66,12 +61,7 @@ export function SheetModal({
       >
         {/* Handle */}
         <XStack justifyContent="center" marginBottom="$3">
-          <YStack
-            width={36}
-            height={4}
-            backgroundColor="$separator"
-            borderRadius={2}
-          />
+          <YStack width={36} height={4} backgroundColor="$separator" borderRadius={2} />
         </XStack>
 
         {/* Title */}

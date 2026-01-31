@@ -26,7 +26,16 @@
     }
   },
   "files": {
-    "ignore": ["dist", "build", ".expo", "coverage", "node_modules", "*.config.js", "metro.config.js", "babel.config.js"]
+    "ignore": [
+      "dist",
+      "build",
+      ".expo",
+      "coverage",
+      "node_modules",
+      "*.config.js",
+      "metro.config.js",
+      "babel.config.js"
+    ]
   },
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true }
 }

@@ -4,5 +4,12 @@
     "types": ["react", "node"],
     "jsx": "react-jsx"
   },
-  "include": ["App.tsx", "../../packages/ui/src/tamagui.config.ts"]
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "App.tsx",
+    "../../packages/ui/src/tamagui.config.ts"
+  ]
 }

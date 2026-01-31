@@ -7,7 +7,7 @@ export interface ValidationResult {
 }
 
 /**
- * Validates item text (max 100 characters)
+ * Validates item text (max 100 characters, trimmed)
  */
 export function isValidText(text: string): boolean {
   return validateItemText(text).valid;
@@ -25,16 +25,21 @@ export function validateItemText(text: string): ValidationResult {
     return { valid: false, error: 'Item text cannot be empty' };
   }
   if (trimmed.length > MAX_TEXT_LENGTH) {
-    return { valid: false, error: `Item text exceeds maximum length of ${MAX_TEXT_LENGTH} characters` };
+    return {
+      valid: false,
+      error: `Item text exceeds maximum length of ${MAX_TEXT_LENGTH} characters`,
+    };
   }
   return { valid: true };
 }
 
 /**
- * Validates alias (max 50 characters)
+ * Validates alias (max 50 characters, trimmed)
  */
 export function isValidAlias(alias: string): boolean {
-  return typeof alias === 'string' && alias.length > 0 && alias.length <= MAX_ALIAS_LENGTH;
+  if (typeof alias !== 'string') return false;
+  const trimmed = alias.trim();
+  return trimmed.length > 0 && trimmed.length <= MAX_ALIAS_LENGTH;
 }
 
 /**

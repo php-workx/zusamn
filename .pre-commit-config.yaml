@@ -6,16 +6,16 @@ repos:
         entry: pnpm turbo lint
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
       - id: turbo-typecheck
         name: turbo typecheck
         entry: pnpm turbo typecheck
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
       - id: turbo-test
         name: turbo test
         entry: pnpm turbo test
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]

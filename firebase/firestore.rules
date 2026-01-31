@@ -40,8 +40,10 @@ service cloud.firestore {
           !(request.auth.uid in resource.data.memberIds))
       );
 
-      // No delete allowed (soft delete or leave only)
-      allow delete: if false;
+      // Allow delete only when the requester is the sole member
+      allow delete: if isAuthenticated() &&
+        request.auth.uid in resource.data.memberIds &&
+        resource.data.memberIds.size() == 1;
 
       // Memberships (Subcollection)
       match /memberships/{userId} {
@@ -59,8 +61,8 @@ service cloud.firestore {
           isMember(listId) &&
           request.resource.data.alias.size() <= 50;
 
-        // Delete: leave list (only if already a member)
-        allow delete: if isAuthenticated() && request.auth.uid == userId && isMember(listId);
+        // Delete: leave list
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
       }
 
       // Items (Subcollection)

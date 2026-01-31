@@ -1,19 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { AppProvider } from '@zusamn/ui';
-import { AuthProvider, ToastProvider, useAuthContext } from '../src/providers';
+import {
+  AuthProvider,
+  PersonalListProvider,
+  ToastProvider,
+  useAuthContext,
+} from '../src/providers';
+import { usePendingInvite } from '../src/hooks';
 
 /**
  * Auth guard component that handles routing based on authentication state.
  * Redirects:
- * - Unauthenticated users to /login
+ * - Unauthenticated users to /login (unless on invite screen)
  * - Users needing display name to /display-name
- * - Authenticated users away from auth screens to /(tabs)
+ * - Authenticated users away from auth screens to /(tabs) or pending invite
  */
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading, needsDisplayName } = useAuthContext();
   const segments = useSegments() as string[];
   const router = useRouter();
+  const { getPendingInvite } = usePendingInvite();
+
+  // Track the last handled invite token to allow new tokens within same session
+  const lastHandledInviteToken = useRef<string | null>(null);
 
   useEffect(() => {
     // Don't redirect while loading auth state
@@ -22,9 +32,15 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const firstSegment = segments[0];
     const secondSegment = segments[1];
     const inAuthGroup = firstSegment === '(auth)';
+    const onInviteScreen = firstSegment === 'invite';
 
     if (!user) {
-      // User is not authenticated - redirect to login
+      // User is not authenticated
+      // Allow invite screen to handle its own auth flow
+      if (onInviteScreen) {
+        return;
+      }
+      // Redirect to login from anywhere else
       // Also redirect from display-name since it requires an authenticated user
       if (!inAuthGroup || secondSegment === 'display-name') {
         router.replace('/(auth)/login');
@@ -36,12 +52,23 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         router.replace('/(auth)/display-name');
       }
     } else {
-      // User is fully authenticated - redirect to tabs if in auth group
+      // User is fully authenticated
+      // Check for pending invite (from pre-auth invite link)
+      const pendingToken = getPendingInvite();
+      if (pendingToken && lastHandledInviteToken.current !== pendingToken) {
+        lastHandledInviteToken.current = pendingToken;
+        // Navigate first; clear token only after successful navigation
+        // The invite screen will clear the pending invite after handling
+        router.replace(`/invite/${pendingToken}`);
+        return;
+      }
+
+      // Redirect to tabs if in auth group (login/display-name completed)
       if (inAuthGroup) {
         router.replace('/(tabs)');
       }
     }
-  }, [user, isLoading, needsDisplayName, segments, router]);
+  }, [user, isLoading, needsDisplayName, segments, router, getPendingInvite]);
 
   return <>{children}</>;
 }
@@ -54,11 +81,13 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <AuthProvider>
-        <ToastProvider>
-          <AuthGuard>
-            <Slot />
-          </AuthGuard>
-        </ToastProvider>
+        <PersonalListProvider>
+          <ToastProvider>
+            <AuthGuard>
+              <Slot />
+            </AuthGuard>
+          </ToastProvider>
+        </PersonalListProvider>
       </AuthProvider>
     </AppProvider>
   );

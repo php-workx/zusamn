@@ -1,27 +1,18 @@
 import { useEffect, useState } from 'react';
 import {
   doc,
-  getDoc,
-  setDoc,
   onSnapshot,
   serverTimestamp,
-  type Firestore,
+  runTransaction,
+  type FieldValue,
 } from 'firebase/firestore';
 import type { User, Locale } from '@zusamn/domain';
-import { initFirebase } from '../client';
+import { getFirestoreDb } from '../db';
 
 export interface UseUserReturn {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-}
-
-/**
- * Get the Firestore instance
- */
-function getFirestoreDb(): Firestore {
-  const { db } = initFirebase();
-  return db;
 }
 
 /**
@@ -40,6 +31,12 @@ function detectLocale(): Locale {
 /**
  * Hook for accessing a user document with get/create logic.
  * Creates the user document if it doesn't exist (on first login).
+ *
+ * Note: If passing options, memoize the object to avoid unnecessary effect re-runs:
+ * ```tsx
+ * const options = useMemo(() => ({ displayName, email }), [displayName, email]);
+ * const { user, isLoading, error } = useUser(authUser?.uid, options);
+ * ```
  *
  * Usage:
  * ```tsx
@@ -70,6 +67,9 @@ export function useUser(
       return;
     }
 
+    // Reset to loading state when userId changes to avoid stale UI
+    setState({ user: null, isLoading: true, error: null });
+
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     let unsubscribe: (() => void) | undefined;
@@ -77,22 +77,25 @@ export function useUser(
 
     const initializeUser = async () => {
       try {
-        // Check if user document exists
-        const userSnap = await getDoc(userRef);
+        // Use transaction for atomic check-and-create to prevent race conditions
+        // when multiple clients try to create the same user simultaneously
+        await runTransaction(db, async (transaction) => {
+          const userSnap = await transaction.get(userRef);
 
-        if (!userSnap.exists()) {
-          // Create user document if it doesn't exist
-          const newUser: Omit<User, 'createdAt'> & { createdAt: ReturnType<typeof serverTimestamp> } = {
-            id: userId,
-            displayName: options?.displayName ?? '',
-            email: options?.email ?? '',
-            avatarUrl: null,
-            locale: detectLocale(),
-            createdAt: serverTimestamp() as unknown as ReturnType<typeof serverTimestamp>,
-          };
+          if (!userSnap.exists()) {
+            // Create user document if it doesn't exist
+            const newUser = {
+              id: userId,
+              displayName: options?.displayName ?? '',
+              email: options?.email ?? '',
+              avatarUrl: null,
+              locale: detectLocale(),
+              createdAt: serverTimestamp(),
+            } satisfies Omit<User, 'createdAt'> & { createdAt: FieldValue };
 
-          await setDoc(userRef, newUser);
-        }
+            transaction.set(userRef, newUser);
+          }
+        });
 
         if (!mounted) return;
 
@@ -110,8 +113,12 @@ export function useUser(
                 email: data.email ?? '',
                 avatarUrl: data.avatarUrl ?? null,
                 locale: data.locale ?? 'en',
-                createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? Date.now(),
-                deletedAt: data.deletedAt?.toMillis?.() ?? data.deletedAt ?? null,
+                createdAt:
+                  data.createdAt?.toMillis?.() ??
+                  (typeof data.createdAt === 'number' ? data.createdAt : Date.now()),
+                deletedAt:
+                  data.deletedAt?.toMillis?.() ??
+                  (typeof data.deletedAt === 'number' ? data.deletedAt : null),
               };
               setState({ user, isLoading: false, error: null });
             } else {

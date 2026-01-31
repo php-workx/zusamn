@@ -11,6 +11,9 @@ import { initFirebase } from '../client';
 import type { Item } from '@zusamn/domain';
 import { validateItemText, LIMITS } from '@zusamn/domain';
 
+/** Error constant for list at capacity - used by mobile app for error checking */
+export const LIST_FULL_ERROR = 'LIST_FULL';
+
 /**
  * Gets the Firestore database instance.
  */
@@ -63,19 +66,19 @@ export async function getItemCount(listId: string): Promise<number> {
  * @returns The created item (with placeholder timestamps until server resolves them)
  * @throws Error if validation fails or item limit (200) is reached
  */
-export async function addItem(
-  listId: string,
-  text: string,
-  userId: string
-): Promise<Item> {
+export async function addItem(listId: string, text: string, userId: string): Promise<Item> {
   // Validate text
   const validation = validateItemText(text);
   if (!validation.valid) {
     throw new Error(validation.error);
   }
 
-  // Generate UUIDv4 for the item
-  const itemId = crypto.randomUUID();
+  const db = getDb();
+  const listRef = getListRef(listId);
+
+  // Use Firestore auto-generated ID (works in all environments including React Native)
+  const itemRef = doc(collection(db, 'lists', listId, 'items'));
+  const itemId = itemRef.id;
 
   // Prepare the item data with server timestamps
   const itemData = {
@@ -88,10 +91,6 @@ export async function addItem(
     serverUpdatedAt: serverTimestamp(),
   };
 
-  const db = getDb();
-  const listRef = getListRef(listId);
-  const itemRef = getItemRef(listId, itemId);
-
   await runTransaction(db, async (transaction) => {
     const listSnapshot = await transaction.get(listRef);
     if (!listSnapshot.exists()) {
@@ -99,8 +98,15 @@ export async function addItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      // This ensures the limit check is accurate even for legacy data
+      currentCount = await getItemCount(listId);
+    }
 
     if (currentCount >= LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(
@@ -137,10 +143,7 @@ export async function addItem(
  * @param itemId - The ID of the item to toggle
  * @throws Error if item does not exist
  */
-export async function toggleItemChecked(
-  listId: string,
-  itemId: string
-): Promise<void> {
+export async function toggleItemChecked(listId: string, itemId: string): Promise<void> {
   const itemRef = getItemRef(listId, itemId);
 
   const db = getDb();
@@ -167,10 +170,7 @@ export async function toggleItemChecked(
  * @param listId - The ID of the list containing the item
  * @param itemId - The ID of the item to soft delete
  */
-export async function softDeleteItem(
-  listId: string,
-  itemId: string
-): Promise<void> {
+export async function softDeleteItem(listId: string, itemId: string): Promise<void> {
   const db = getDb();
   const listRef = getListRef(listId);
   const itemRef = getItemRef(listId, itemId);
@@ -194,8 +194,13 @@ export async function softDeleteItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      currentCount = await getItemCount(listId);
+    }
 
     transaction.update(itemRef, {
       deleted: true,
@@ -214,10 +219,7 @@ export async function softDeleteItem(
  * @param listId - The ID of the list containing the item
  * @param itemId - The ID of the item to restore
  */
-export async function undeleteItem(
-  listId: string,
-  itemId: string
-): Promise<void> {
+export async function undeleteItem(listId: string, itemId: string): Promise<void> {
   const db = getDb();
   const listRef = getListRef(listId);
   const itemRef = getItemRef(listId, itemId);
@@ -241,8 +243,13 @@ export async function undeleteItem(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      currentCount = await getItemCount(listId);
+    }
 
     if (currentCount + 1 > LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(
@@ -259,17 +266,16 @@ export async function undeleteItem(
 }
 
 /**
- * Soft deletes multiple items atomically using a batch write.
+ * Soft deletes multiple items atomically using a Firestore transaction.
  * Used for the "Clear checked" feature.
  *
  * @param listId - The ID of the list containing the items
  * @param itemIds - Array of item IDs to soft delete
  */
-export async function bulkSoftDelete(
-  listId: string,
-  itemIds: string[]
-): Promise<void> {
-  if (itemIds.length === 0) {
+export async function bulkSoftDelete(listId: string, itemIds: string[]): Promise<void> {
+  // Prefilter and deduplicate itemIds to prevent duplicate reads/decrements
+  const cleanedIds = [...new Set(itemIds.filter((id) => id?.trim()))];
+  if (cleanedIds.length === 0) {
     return;
   }
 
@@ -283,15 +289,14 @@ export async function bulkSoftDelete(
     }
 
     const itemSnapshots = await Promise.all(
-      itemIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
+      cleanedIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
     );
 
     let actualDeletedCount = 0;
     for (const [index, snapshot] of itemSnapshots.entries()) {
-      const itemId = itemIds[index];
-      if (!itemId) {
-        continue;
-      }
+      // cleanedIds[index] is guaranteed to exist since we iterate over itemSnapshots
+      // which was created from cleanedIds with same length
+      const itemId = cleanedIds[index] as string;
 
       if (!snapshot.exists()) {
         continue;
@@ -310,8 +315,7 @@ export async function bulkSoftDelete(
     }
 
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    const currentCount = typeof listData.itemCount === 'number' ? listData.itemCount : 0;
 
     transaction.update(listRef, {
       itemCount: Math.max(0, currentCount - actualDeletedCount),
@@ -320,17 +324,16 @@ export async function bulkSoftDelete(
 }
 
 /**
- * Restores multiple soft-deleted items atomically using a batch write.
+ * Restores multiple soft-deleted items atomically using a Firestore transaction.
  * Used for undo of "Clear checked" feature.
  *
  * @param listId - The ID of the list containing the items
  * @param itemIds - Array of item IDs to restore
  */
-export async function bulkUndelete(
-  listId: string,
-  itemIds: string[]
-): Promise<void> {
-  if (itemIds.length === 0) {
+export async function bulkUndelete(listId: string, itemIds: string[]): Promise<void> {
+  // Prefilter and deduplicate itemIds to prevent duplicate reads/increments
+  const cleanedIds = [...new Set(itemIds.filter((id) => id?.trim()))];
+  if (cleanedIds.length === 0) {
     return;
   }
 
@@ -344,15 +347,14 @@ export async function bulkUndelete(
     }
 
     const itemSnapshots = await Promise.all(
-      itemIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
+      cleanedIds.map((itemId) => transaction.get(getItemRef(listId, itemId)))
     );
 
     let restoredCount = 0;
     for (const [index, snapshot] of itemSnapshots.entries()) {
-      const itemId = itemIds[index];
-      if (!itemId) {
-        continue;
-      }
+      // cleanedIds[index] is guaranteed to exist since we iterate over itemSnapshots
+      // which was created from cleanedIds with same length
+      const itemId = cleanedIds[index] as string;
 
       if (!snapshot.exists()) {
         continue;
@@ -370,9 +372,15 @@ export async function bulkUndelete(
       });
     }
 
+    // Use same fallback logic as bulkSoftDelete for consistency
     const listData = listSnapshot.data();
-    const currentCount =
-      typeof listData.itemCount === 'number' ? listData.itemCount : 0;
+    let currentCount: number;
+    if (typeof listData.itemCount === 'number') {
+      currentCount = listData.itemCount;
+    } else {
+      // Fallback: compute actual count for older lists missing itemCount
+      currentCount = await getItemCount(listId);
+    }
 
     if (currentCount + restoredCount > LIMITS.ITEMS_PER_LIST_MAX) {
       throw new Error(
