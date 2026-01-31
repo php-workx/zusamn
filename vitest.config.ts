@@ -18,6 +18,8 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/coverage/**',
+      // Exclude git worktrees - they have their own test runs
+      '.worktrees/**',
       // Exclude emulator/integration tests - they require Firebase emulator
       '**/*.emulator.test.ts',
       '**/*.emulator.test.tsx',
